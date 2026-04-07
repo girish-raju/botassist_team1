@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+anthropic
+chromadb
+python-multipart
+pydantic-settings
+python-dotenv
+ruff
+pytest
+httpx
