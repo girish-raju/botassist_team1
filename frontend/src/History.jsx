@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Search, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { fetchHistory, fetchSessionMessages } from './api';
 
 export default function History({ setError }) {
@@ -58,8 +59,9 @@ export default function History({ setError }) {
     return (
       <div className="history-container">
         <div className="history-header">
-          <button className="btn btn-secondary" onClick={handleBack}>
-            ← Back
+          <button className="btn btn-outline btn-sm" onClick={handleBack}>
+            <ArrowLeft size={14} />
+            Back
           </button>
           <h2>Session: {selectedSession.title || selectedSession.session_id}</h2>
         </div>
@@ -92,6 +94,7 @@ export default function History({ setError }) {
       </div>
 
       <div className="history-search">
+        <Search size={16} className="search-icon" />
         <input
           type="text"
           className="search-input"
@@ -110,17 +113,17 @@ export default function History({ setError }) {
           filteredSessions.map((session) => (
             <div
               key={session.session_id}
-              className="session-card"
+              className="history-card"
               onClick={() => handleSelectSession(session)}
             >
-              <div className="session-card-title">
+              <div className="history-card-title">
                 {session.title || 'Untitled Session'}
               </div>
-              <div className="session-card-meta">
+              <div className="history-card-meta">
                 <span>{formatDate(session.created_at)}</span>
                 <span>{session.message_count} messages</span>
               </div>
-              <div className="session-card-preview">
+              <div className="history-card-preview">
                 {session.last_message || 'No messages'}
               </div>
             </div>
@@ -131,21 +134,21 @@ export default function History({ setError }) {
       {totalPages > 1 && (
         <div className="pagination">
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn btn-outline btn-sm btn-icon"
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
           >
-            Previous
+            <ChevronLeft size={16} />
           </button>
           <span className="page-info">
             Page {page} of {totalPages}
           </span>
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn btn-outline btn-sm btn-icon"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
           >
-            Next
+            <ChevronRight size={16} />
           </button>
         </div>
       )}

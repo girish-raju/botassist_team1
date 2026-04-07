@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { MessageSquare, Send } from 'lucide-react';
 import { sendMessage } from './api';
 
 export default function Chat({ setError }) {
@@ -61,7 +62,7 @@ export default function Chat({ setError }) {
     <div className="chat-container">
       <div className="chat-header">
         <h2>Chat with your Documents</h2>
-        <button className="btn btn-secondary" onClick={handleNewChat}>
+        <button className="btn btn-outline btn-sm" onClick={handleNewChat}>
           New Chat
         </button>
       </div>
@@ -69,39 +70,47 @@ export default function Chat({ setError }) {
       <div className="chat-messages">
         {messages.length === 0 ? (
           <div className="chat-empty">
-            <div className="chat-empty-icon">🤖</div>
+            <div className="chat-empty-icon">
+              <MessageSquare size={48} strokeWidth={1.2} />
+            </div>
             <h3>Start a conversation</h3>
             <p>Ask questions about your uploaded documents and get AI-powered answers.</p>
           </div>
         ) : (
           messages.map((msg, idx) => (
-            <div key={idx} className={`chat-bubble ${msg.role}`}>
+            <div key={idx} className={`chat-message ${msg.role === 'user' ? 'chat-user' : 'chat-assistant'}`}>
               <div className="bubble-label">
                 {msg.role === 'user' ? 'You' : 'BotAssist'}
               </div>
-              <div className="bubble-content">
-                {msg.role === 'assistant' ? (
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                ) : (
-                  <p>{msg.content}</p>
+              <div className="bubble">
+                <div className="bubble-content">
+                  {msg.role === 'assistant' ? (
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  ) : (
+                    <p>{msg.content}</p>
+                  )}
+                </div>
+                {/* BUG: displays "Sources: undefined" when sources is undefined */}
+                {msg.role === 'assistant' && (
+                  <div className="chat-sources">
+                    <span>Sources: {msg.sources ? msg.sources.map((s, i) => (
+                      <span key={i} className="badge badge-secondary" style={{ marginRight: 4 }}>{s}</span>
+                    )) : msg.sources}</span>
+                  </div>
                 )}
               </div>
-              {/* BUG: displays "Sources: undefined" when sources is undefined */}
-              {msg.role === 'assistant' && (
-                <div className="bubble-sources">
-                  Sources: {msg.sources ? msg.sources.join(', ') : msg.sources}
-                </div>
-              )}
             </div>
           ))
         )}
         {loading && (
-          <div className="chat-bubble assistant">
+          <div className="chat-message chat-assistant">
             <div className="bubble-label">BotAssist</div>
-            <div className="bubble-content typing">
-              <span className="dot"></span>
-              <span className="dot"></span>
-              <span className="dot"></span>
+            <div className="bubble">
+              <div className="bubble-content typing">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </div>
             </div>
           </div>
         )}
@@ -110,7 +119,7 @@ export default function Chat({ setError }) {
 
       <div className="chat-input-area">
         <textarea
-          className="chat-input"
+          className="textarea"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -119,7 +128,7 @@ export default function Chat({ setError }) {
         />
         {/* BUG: button is never disabled while loading */}
         <button className="btn btn-primary send-btn" onClick={handleSend}>
-          Send
+          <Send size={18} />
         </button>
       </div>
     </div>

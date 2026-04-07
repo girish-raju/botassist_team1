@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
+import { MessageSquare, FileUp, Clock } from 'lucide-react';
 import Chat from './Chat';
 import Upload from './Upload';
 import History from './History';
 
 const TABS = [
-  { key: 'chat', label: 'Chat', icon: '💬' },
-  { key: 'documents', label: 'Documents', icon: '📄' },
-  { key: 'history', label: 'History', icon: '🕓' },
+  { key: 'chat', label: 'Chat', icon: MessageSquare },
+  { key: 'documents', label: 'Documents', icon: FileUp },
+  { key: 'history', label: 'History', icon: Clock },
 ];
 
 export default function App() {
@@ -22,21 +23,24 @@ export default function App() {
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        <div className="sidebar-brand">
+        <div className="sidebar-header">
           <h1>BotAssist</h1>
           <span className="sidebar-subtitle">AI Document Chat</span>
         </div>
         <nav className="sidebar-nav">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              className={`sidebar-tab ${activeTab === tab.key ? 'active' : ''}`}
-              onClick={() => handleTabSwitch(tab.key)}
-            >
-              <span className="tab-icon">{tab.icon}</span>
-              <span className="tab-label">{tab.label}</span>
-            </button>
-          ))}
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                className={`sidebar-nav-item ${activeTab === tab.key ? 'active' : ''}`}
+                onClick={() => handleTabSwitch(tab.key)}
+              >
+                <Icon size={18} strokeWidth={1.8} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </nav>
         <div className="sidebar-footer">
           <p>Powered by AI</p>

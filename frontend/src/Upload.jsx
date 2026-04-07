@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Upload as UploadIcon, Trash2, FileText, RefreshCw } from 'lucide-react';
 import { uploadDocument, listDocuments, deleteDocument } from './api';
 
 export default function Upload({ setError }) {
@@ -77,7 +78,8 @@ export default function Upload({ setError }) {
     <div className="upload-container">
       <div className="upload-header">
         <h2>Document Management</h2>
-        <button className="btn btn-secondary" onClick={loadDocuments}>
+        <button className="btn btn-outline btn-sm" onClick={loadDocuments}>
+          <RefreshCw size={14} />
           Refresh
         </button>
       </div>
@@ -88,21 +90,21 @@ export default function Upload({ setError }) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="dropzone-content">
-          <div className="dropzone-icon">📁</div>
-          <p className="dropzone-text">
-            {uploading ? 'Uploading...' : 'Drag & drop a file here, or click to browse'}
-          </p>
-          <input
-            type="file"
-            className="dropzone-input"
-            onChange={handleFileChange}
-            // BUG: accept includes .doc which the backend may not support
-            accept=".pdf,.txt,.md,.doc,.docx,.csv"
-            disabled={uploading}
-          />
-          <p className="dropzone-hint">Supported: PDF, TXT, Markdown, Word, CSV</p>
+        <div className="dropzone-icon">
+          <UploadIcon size={40} strokeWidth={1.2} />
         </div>
+        <p className="dropzone-text">
+          {uploading ? 'Uploading...' : 'Drag & drop a file here, or click to browse'}
+        </p>
+        <input
+          type="file"
+          className="dropzone-input"
+          onChange={handleFileChange}
+          // BUG: accept includes .doc which the backend may not support
+          accept=".pdf,.txt,.md,.doc,.docx,.csv"
+          disabled={uploading}
+        />
+        <p className="dropzone-hint">Supported: PDF, TXT, Markdown, Word, CSV</p>
       </div>
 
       <div className="documents-list">
@@ -112,33 +114,28 @@ export default function Upload({ setError }) {
             <p>No documents uploaded yet. Upload a document to get started.</p>
           </div>
         ) : (
-          <table className="documents-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Size</th>
-                <th>Uploaded</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map((doc) => (
-                <tr key={doc.id}>
-                  <td className="doc-name">{doc.filename}</td>
-                  <td>{formatFileSize(doc.size)}</td>
-                  <td>{doc.uploaded_at}</td>
-                  <td>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDelete(doc)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="document-grid">
+            {documents.map((doc) => (
+              <div key={doc.id} className="document-card">
+                <div className="document-card-info">
+                  <div className="document-card-name" title={doc.filename}>
+                    <FileText size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: '-2px' }} />
+                    {doc.filename}
+                  </div>
+                  <div className="document-card-meta">
+                    {formatFileSize(doc.size)} &middot; {doc.uploaded_at}
+                  </div>
+                </div>
+                <button
+                  className="btn btn-ghost btn-icon btn-sm"
+                  onClick={() => handleDelete(doc)}
+                  title="Delete document"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
