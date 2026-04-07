@@ -1,112 +1,136 @@
 ---
 name: test
-description: Run tests and report results clearly. Use when the user wants to check if tests pass or verify changes.
+description: Run BotAssist tests and report results — backend pytest, frontend build check, coverage gaps. Use to verify changes.
 user-invocable: true
-argument-hint: "[--all]"
+argument-hint: "[--all | --backend | --frontend]"
 allowed-tools: Bash, Read, Grep, Glob
 model: sonnet
 ---
 
-# /test — Run Tests and Report
+# /test — BotAssist Test Runner
 
 **Level:** L0 — Execute and report
 
-Detect the project type, run the appropriate test or build command, and report results in a clear, structured format. This is the quickest way to check project health.
+Run the BotAssist backend test suite (pytest) and frontend build check (Vite), then report results with coverage gap analysis.
 
 ---
 
 ## Steps
 
-### Step 1: Detect Project Type
+### Step 1: Inventory Test Files
 
-Check the project root for build files to determine the project type:
+Check what test files exist in the BotAssist project:
 
-1. Check if `pom.xml` exists → **Java/Maven project**
-2. Check if `package.json` exists (and `node_modules/@angular` exists) → **Angular project**
-3. If both exist → **Full-stack project** (run both)
-4. If neither exists → Report error and stop
-
-### Step 2: Run Tests
-
-**For Java/Maven projects:**
-```
-mvn test 2>&1
-```
-- Parse Surefire summary line: `Tests run: X, Failures: Y, Errors: Z, Skipped: W`
-- For each failure, extract: test class, test method, assertion message, expected vs. actual
-- Note compilation errors separately — they prevent tests from running
-
-**For Angular projects:**
-```
-ng build 2>&1
-```
-- Parse for: compilation errors (TS errors with file:line), warnings, success/failure
-- Count total errors and warnings
-
-**If `--all` argument is provided:**
-- Run both Java and Angular regardless of auto-detection
-- Also check for integration tests: `mvn verify -DskipUnitTests 2>&1`
-
-### Step 3: Report Results
-
-Format the report clearly:
+1. List all files in `backend/tests/`:
+   - `conftest.py` — fixtures (temp_db, sample_text)
+   - `test_documents.py` — 3 tests (INCOMPLETE)
+   - Any other test files that may have been added
+2. Report which backend modules have test coverage and which have ZERO:
 
 ```
-## Test Results
+## Test File Inventory
 
-### Java (Maven)
-- Total: 42 tests
-- Passed: 40
-- Failed: 2
+| Module | Test File | Status |
+|--------|-----------|--------|
+| documents.py | test_documents.py (3 tests) | PARTIAL |
+| auth.py | — | NO TESTS |
+| database.py | — | NO TESTS |
+| main.py | — | NO TESTS |
+| rag.py | — | NO TESTS |
+| config.py | — | NO TESTS |
+```
+
+### Step 2: Run Backend Tests
+
+Run the pytest suite:
+
+```bash
+cd backend && python -m pytest tests/ -v 2>&1
+```
+
+- Parse output for: total tests, passed, failed, errors, skipped
+- For each failure, extract: test name, assertion message, expected vs. actual
+- Note any import errors or fixture failures separately
+
+Report format:
+```
+## Backend Tests (pytest)
+
+- Total: 3 tests
+- Passed: 3
+- Failed: 0
 - Errors: 0
-- Skipped: 0
 
-### Failures
+### Failures (if any)
 
-1. InvoiceServiceTest#testGetAllInvoices
-   - Expected: empty list
-   - Actual: NullPointerException at InvoiceService.java:35
-   - File: src/test/java/com/botree/invoice/InvoiceServiceTest.java:28
-
-2. InvoiceControllerTest#testGetInvoiceNotFound
-   - Expected: HTTP 404
-   - Actual: HTTP 500
-   - File: src/test/java/com/botree/invoice/InvoiceControllerTest.java:55
+1. test_documents.py::test_chunk_text
+   - Expected: chunks of size 100
+   - Actual: chunks of size 99 (off-by-one in range step)
+   - File: backend/tests/test_documents.py:15
 ```
 
-For Angular:
-```
-### Angular (Build)
-- Status: FAILED
-- Errors: 2
-- Warnings: 1
+### Step 3: Run Frontend Build
 
-### Errors
+Since BotAssist has no frontend test framework (no Jest, no Vitest), the build is the check:
 
-1. TS2339: Property 'invoice' does not exist on type 'DashboardComponent'
-   - File: src/app/dashboard/dashboard.component.ts:24:15
-
-2. TS2345: Argument of type 'string' is not assignable to parameter of type 'number'
-   - File: src/app/services/invoice.service.ts:42:8
+```bash
+cd frontend && npm run build 2>&1
 ```
 
-### Step 4: Compare with Ticket Expectations
+- Parse for: success/failure, TypeScript/JSX errors, warnings
+- Vite build output goes to `frontend/dist/`
+- A successful build means all imports resolve and JSX compiles
 
-1. Read `TICKET.md` if it exists
-2. Check which tests the ticket says should be failing (for exercise repos, tickets describe intentional bugs)
-3. Report whether the current failures match the ticket expectations:
-   - "Expected failures (per ticket): 2 — Actual failures: 2 — MATCHES"
-   - "Expected failures (per ticket): 2 — Actual failures: 3 — MISMATCH (1 unexpected failure)"
+Report format:
+```
+## Frontend Build (Vite)
 
-### Step 5: Next Action Suggestion
+- Status: PASS / FAIL
+- Output: dist/ directory created
+- Errors: [list if any]
+- Warnings: [list if any]
+```
+
+### Step 4: Coverage Gap Analysis
+
+Cross-reference changed files (from `git diff --name-only main...HEAD` or `git status`) against test files:
+
+1. Which files were recently changed?
+2. Do those changed files have test coverage?
+3. Report the gap:
+
+```
+## Coverage Gap Analysis
+
+Recently changed files without tests:
+- backend/app/auth.py — CHANGED, NO TESTS (should have test_auth.py)
+- backend/app/database.py — CHANGED, NO TESTS (should have test_database.py)
+
+Modules with zero test coverage (unchanged but risky):
+- backend/app/main.py — 7 API routes, 0 tests
+- backend/app/rag.py — RAG pipeline, 0 tests
+- backend/app/config.py — settings, 0 tests
+```
+
+### Step 5: Summary and Next Action
+
+Report format:
+```
+## Summary
+
+- Backend: 3 tests, 3 passed, 0 failed
+- Frontend: Build PASS
+- Coverage: 1/6 modules have tests (test_documents.py only)
+- Gap: auth, database, main, rag, config have ZERO tests
+```
 
 | Condition | Suggestion |
 |-----------|------------|
-| All tests pass | "All green. Run `/close` to commit and create a PR." |
-| Failures match ticket expectations | "Failures match the ticket. Run `/fix` to start resolving them." |
-| Unexpected failures (not in ticket) | "Unexpected failures detected. Investigate before working on the ticket." |
-| Compilation errors | "Fix compilation errors first — tests cannot run until the code compiles." |
-| No test files found | "No tests found in this project." |
+| All tests pass, build succeeds | "All green. Run `/review` then `/close` to commit and create a PR." |
+| Backend tests fail | "Tests failing. Run `/fix` to diagnose: [first failure name]" |
+| Frontend build fails | "Frontend build broken. Fix JSX/import errors before proceeding." |
+| Changed files have no tests | "You changed [file] but it has no tests. Write tests before committing." |
+| Everything passes but coverage is low | "Tests pass but coverage is very low (1/6 modules). Consider writing tests for [module]." |
 
 ---
 
@@ -114,46 +138,45 @@ For Angular:
 
 | Failure | Detection | Response |
 |---------|-----------|----------|
-| Maven not installed | `mvn: command not found` | Report: "Maven is not installed. Install it or run `/onboard` to check your environment." |
-| Node/Angular CLI not installed | `ng: command not found` | Report: "Angular CLI is not installed. Install it or run `/onboard` to check your environment." |
-| Compilation error (Java) | `mvn test` exits with `COMPILATION ERROR` in output | Report compilation errors separately. Note: "Tests did not run — fix compilation errors first." |
-| Compilation error (Angular) | `ng build` exits with TypeScript errors | Report each error with file and line. |
-| Test timeout | Command runs longer than 120 seconds | Kill the process. Report: "Tests timed out. Check for infinite loops or deadlocks." |
-| No test files | No `*Test.java` files or `*.spec.ts` files found | Report: "No test files found in this project." |
-| Dependency resolution failure | Maven cannot download dependencies | Report: "Dependency resolution failed. Check your internet connection and Maven settings." |
+| Python not installed | `python3` or `python -m pytest` fails | Report: "Python is not installed. Run `/onboard` to check your environment." |
+| pytest not installed | `ModuleNotFoundError: pytest` | Report: "pytest not installed. Run `pip install -r requirements.txt` in the backend venv." |
+| Node/npm not installed | `npm: command not found` | Report: "Node.js is not installed. Run `/onboard` to check your environment." |
+| Frontend deps missing | `npm run build` fails with module not found | Report: "Run `cd frontend && npm install` first." |
+| Import errors in tests | pytest collection errors | Report: "Tests crashed during collection. Check import paths and fixtures in conftest.py." |
+| Backend venv not active | Wrong Python path, missing packages | Report: "Activate the virtual environment: `source backend/.venv/bin/activate`" |
+| Test timeout | Command runs longer than 60 seconds | Kill the process. Report: "Tests timed out. Check for infinite loops or network calls." |
 
 ---
 
 ## Boundaries
 
 ### DO
-- Detect the project type automatically from build files
-- Run the standard test command for the detected project type
+- List existing test files and count tests per module
+- Run `python -m pytest tests/ -v` for backend
+- Run `npm run build` for frontend (no test framework exists yet)
 - Parse and summarize results in a structured format
 - Report each failure with test name, error message, and file location
-- Compare results against TICKET.md expectations when available
+- Identify modules with zero test coverage
 - Provide a single clear next-action suggestion
 
 ### DO NOT
 - Modify any source files or test files
 - Attempt to fix failing tests (suggest `/fix` instead)
-- Skip tests or run with `-DskipTests`
-- Install dependencies or modify `pom.xml` / `package.json`
-- Run tests in parallel or with custom flags unless requested
-- Dump raw Maven or Angular output — always parse and summarize
+- Install dependencies or modify requirements.txt / package.json
+- Write new tests (suggest that the user do it, or use `/loop`)
+- Skip the backend tests even if only frontend files changed
+- Dump raw pytest or Vite output — always parse and summarize
 
 ---
 
 ## Rules
 
 - This skill is strictly **read-only** — it runs tests but never modifies code
-- Always parse test output into a structured report — never dump raw console output at the user
+- Always parse test output into a structured report — never dump raw console output
 - Report both the count summary and individual failure details
-- If TICKET.md exists, always compare failures against ticket expectations
-- For Java projects, focus on the Surefire summary and individual test failure blocks
-- For Angular projects, focus on TypeScript compilation errors and their file locations
+- Always note that BotAssist has very incomplete test coverage (only test_documents.py with 3 tests)
+- If tests pass, still warn about coverage gaps — passing with 3 tests is not "well tested"
 - End with exactly one next-action suggestion based on the results
-- If both Java and Angular are present, report both in separate sections
 
 ---
 
@@ -161,7 +184,7 @@ For Angular:
 
 After running `/test`:
 
-- All tests pass → `/close` to wrap up the ticket
-- Tests failing as expected → `/fix` to start resolving
-- Unexpected failures → Investigate before proceeding
+- All tests pass → `/review` then `/close` to wrap up
+- Tests failing → `/fix` to start resolving
+- Coverage too low → write tests as part of next `/loop` cycle
 - Environment issues → `/onboard` to verify setup
