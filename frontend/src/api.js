@@ -1,10 +1,16 @@
 // BotAssist API layer
 
+function getAuthHeader() {
+  const token = localStorage.getItem('botassist_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function apiFetch(path, options = {}) {
   const res = await fetch(path, {
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeader(),
       ...options.headers,
     },
   });
@@ -35,6 +41,7 @@ export async function uploadDocument(file) {
   formData.append("file", file);
   const res = await fetch("/api/documents/upload", {
     method: "POST",
+    headers: getAuthHeader(),
     body: formData,
   });
   if (!res.ok) {
@@ -82,4 +89,20 @@ export async function deleteSession(sessionId) {
 // Clear all history
 export async function clearAllHistory() {
   return apiFetch('/api/history/sessions', { method: 'DELETE' });
+}
+
+// Sign up new user
+export async function signUp(name, email, password) {
+  return apiFetch('/api/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify({ name, email, password }),
+  });
+}
+
+// Sign in existing user
+export async function signIn(email, password) {
+  return apiFetch('/api/auth/signin', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
 }

@@ -52,10 +52,10 @@ cd backend && ruff format app/ tests/ # auto-fix formatting
 |--------|------|-------|
 | id | INTEGER PRIMARY KEY | autoincrement |
 | filename | TEXT NOT NULL | original filename |
-| content_hash | TEXT | MD5 hash of content |
+| content | TEXT NOT NULL | full document text |
 | chunk_count | INTEGER | number of chunks in ChromaDB |
-| uploaded_at | TIMESTAMP | defaults to CURRENT_TIMESTAMP |
-| status | TEXT | 'active' or 'deleted' |
+| uploaded_at | TEXT | ISO 8601 UTC timestamp |
+| file_size | INTEGER | bytes |
 
 ### chat_history
 | Column | Type | Notes |
@@ -65,7 +65,16 @@ cd backend && ruff format app/ tests/ # auto-fix formatting
 | role | TEXT NOT NULL | 'user' or 'assistant' |
 | content | TEXT NOT NULL | message text |
 | sources | TEXT | JSON array of source chunk references |
-| created_at | TIMESTAMP | defaults to CURRENT_TIMESTAMP |
+| created_at | TEXT | ISO 8601 UTC timestamp |
+
+### users
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INTEGER PRIMARY KEY | autoincrement |
+| email | TEXT NOT NULL UNIQUE | lowercased on insert |
+| name | TEXT NOT NULL | display name |
+| password_hash | TEXT NOT NULL | bcrypt hash |
+| created_at | TEXT | ISO 8601 UTC timestamp |
 
 ## API Routes
 
@@ -74,16 +83,29 @@ All routes are at root level (no `/api/` prefix). Frontend Vite proxy rewrites `
 | Method | Route | Auth | Description |
 |--------|-------|------|-------------|
 | GET | /health | No | Health check |
-| POST | /documents/upload | **BUG: None** | Upload document (multipart) — auth.py exists but is not wired in |
+| POST | /auth/signup | No | Register user → returns JWT token |
+| POST | /auth/signin | No | Login → returns JWT token |
+| GET | /auth/me | JWT Bearer | Get current user info |
+| POST | /documents/upload | **BUG: None** | Upload document (multipart) — no auth enforced |
 | GET | /documents | No | List all documents |
-| DELETE | /documents/{doc_id} | **BUG: None** | Delete document |
-| POST | /query | **BUG: None** | RAG query — send question, get AI answer |
+| DELETE | /documents/{doc_id}?filename=... | **BUG: None** | Delete document — no auth enforced |
+| POST | /query | **BUG: None** | RAG query — no auth enforced |
 | GET | /chat/{session_id} | No | Get chat history for session |
-| GET | /search?keyword=... | No | Search chat history — SQL injection in search_history() |
+| GET | /search?keyword=... | No | Search chat history |
+| GET | /history/sessions?page=&limit= | No | Paginated session list |
+| DELETE | /history/sessions/{session_id} | No | Delete a session |
+| DELETE | /history/sessions | No | Clear all history |
 
 ### Request/Response Models
 - `QueryRequest`: `{ message: str, session_id: str | None, top_k: int (default 5) }`
-- `QueryResponse`: `{ answer: str, sources: list[str], session_id: str, chunks_used: int }`
+- `QueryResponse`: `{ answer: str, sources: list[SourceItem], session_id: str, chunks_used: int }`
+- `SourceItem`: `{ filename: str, chunk_content: str, relevance_score: float | None }`
+- `SignUpRequest` / `SignInRequest`: `{ email: str, name: str, password: str }` / `{ email: str, password: str }`
+
+### JWT Auth
+- Tokens stored in `localStorage` as `botassist_token`; sent as `Authorization: Bearer <token>`
+- JWT signing key defaults to a hardcoded fallback in `jwt_auth.py` — must be set via `JWT_SECRET_KEY` env var
+- Token expiry: 24 hours
 
 ## Project Structure
 
@@ -112,12 +134,14 @@ botassist/
 │       └── pre-push.sh    # Block force push
 ├── backend/
 │   ├── app/
-│   │   ├── main.py        # FastAPI app + routes (135 lines)
-│   │   ├── auth.py        # API key authentication (23 lines)
-│   │   ├── config.py      # Pydantic settings (17 lines)
-│   │   ├── database.py    # SQLite operations (126 lines)
-│   │   ├── documents.py   # Doc upload + chunking (81 lines)
-│   │   └── rag.py         # ChromaDB + Claude API (67 lines)
+│   │   ├── main.py        # FastAPI app + routes + auth middleware
+│   │   ├── auth.py        # Legacy API key auth (NOT wired in — unused)
+│   │   ├── jwt_auth.py    # JWT token creation/decoding, bcrypt hashing
+│   │   ├── users.py       # users table CRUD (separate from database.py)
+│   │   ├── config.py      # Pydantic settings (loads .env)
+│   │   ├── database.py    # SQLite: documents + chat_history tables
+│   │   ├── documents.py   # Doc ingest/chunking + ChromaDB search
+│   │   └── rag.py         # ChromaDB query + Claude API answer generation
 │   ├── tests/
 │   │   ├── conftest.py    # Fixtures: temp_db, sample_text
 │   │   └── test_documents.py  # 3 tests (INCOMPLETE coverage)
@@ -126,12 +150,14 @@ botassist/
 │   └── .env.example
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx        # Main layout, 3 tabs (60 lines)
-│   │   ├── Chat.jsx       # Chat interface (127 lines)
-│   │   ├── Upload.jsx     # Document upload (147 lines)
-│   │   ├── History.jsx    # Chat history + search (155 lines)
-│   │   ├── api.js         # API client, 6 functions (103 lines)
-│   │   ├── App.css        # Styles (~210 lines)
+│   │   ├── App.jsx        # Root: screen router (landing/signin/signup/app) + sidebar layout
+│   │   ├── Landing.jsx    # Marketing landing page with sign in/up CTAs
+│   │   ├── AuthPages.jsx  # SignIn + SignUp form components
+│   │   ├── Chat.jsx       # Chat interface with session resumption
+│   │   ├── Upload.jsx     # Document upload + list
+│   │   ├── History.jsx    # Chat history + search + session management
+│   │   ├── api.js         # All API calls — never use fetch() directly in components
+│   │   ├── App.css        # Styles
 │   │   └── main.jsx       # React entry point
 │   ├── vite.config.js     # Proxy /api → localhost:8000
 │   └── package.json
@@ -143,19 +169,30 @@ botassist/
 ## Key Dependencies Between Files
 
 ```
-main.py  →  auth.py (verify_admin dependency on upload + query)
-main.py  →  database.py (init_db, save_chat_message, get_chat_history, search_history)
+main.py  →  jwt_auth.py (create_access_token, decode_access_token, hash_password, verify_password)
+main.py  →  users.py (create_user, get_user_by_email, init_users_table)
+main.py  →  database.py (init_db, save_chat_message, get_chat_history, search_history,
+                         get_history_sessions, delete_session, delete_all_history)
 main.py  →  documents.py (ingest_document, list_documents, remove_document)
 main.py  →  rag.py (query_documents)
 
 documents.py  →  database.py (save_document, get_all_documents, delete_document)
-documents.py  →  rag.py (ChromaDB add via chroma client)
+documents.py  →  chromadb (PersistentClient — collection "botassist_docs")
 
-rag.py  →  config.py (ANTHROPIC_API_KEY)
-rag.py  →  chromadb (vector store)
+rag.py  →  documents.py (search_documents — ChromaDB similarity search)
+rag.py  →  config.py (ANTHROPIC_API_KEY, CLAUDE_MODEL)
+rag.py  →  anthropic SDK (Claude messages API)
 
+users.py  →  config.py (SQLITE_DB_PATH — uses same DB file as database.py)
+jwt_auth.py  →  python-jose (JWT), passlib[bcrypt]
+
+frontend/App.jsx  →  Landing, AuthPages, Chat, Upload, History
 frontend/api.js  →  all backend routes via /api/* proxy
+frontend/AuthPages.jsx  →  api.js (signIn, signUp) — saves token to localStorage
 ```
+
+### Auth state flow (frontend)
+`localStorage.botassist_token` + `localStorage.botassist_user` → restored on mount in `App.jsx` → passed implicitly (api.js reads token from localStorage for auth'd calls — NOTE: current `api.js` does NOT attach the token to request headers; this is a bug)
 
 ## Ticket Board
 
@@ -221,8 +258,11 @@ BOT-{ticket-number}/{name}/{short-desc}
 
 Tracked on Linear (linear.app/tech-assistant). Do NOT fix without running `/loop`:
 
+- `api.js` does not attach the JWT token to authenticated requests (upload, query, delete)
+- `jwt_auth.py` has a hardcoded fallback `JWT_SECRET_KEY` — must be overridden via env
+- `config.py` has a hardcoded fallback `ANTHROPIC_API_KEY` — must be overridden via env
+- `/documents/upload`, `/documents/{doc_id}`, and `/query` routes have no auth enforced
 - Backend error handling is inconsistent — some routes leak stack traces
-- Search has reports of unexpected behavior for some queries
 - Document processing pipeline has edge cases in chunking
-- Some security practices need review
 - Test coverage is very low — auth, RAG, and API routes have zero tests
+- `auth.py` is unused dead code (legacy API key approach, replaced by JWT)

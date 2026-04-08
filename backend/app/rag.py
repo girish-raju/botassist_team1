@@ -38,10 +38,10 @@ def generate_answer(query: str, context_chunks: list[dict]) -> str:
         raise RuntimeError(f"Claude API error: {e}") from e
 
 
-def query_documents(query: str, top_k: int = 5) -> dict:
+def query_documents(query: str, top_k: int = 5, user_id: int = 0) -> dict:
     """Retrieve relevant chunks and generate an answer."""
     top_k = min(top_k, MAX_TOP_K)
-    relevant_chunks = search_documents(query, top_k=top_k)
+    relevant_chunks = search_documents(query, top_k=top_k, user_id=user_id)
 
     if not relevant_chunks:
         return {
