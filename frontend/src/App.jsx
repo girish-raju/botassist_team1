@@ -13,11 +13,18 @@ const TABS = [
 export default function App() {
   const [activeTab, setActiveTab] = useState('chat');
   const [error, setError] = useState(null);
+  // When a history session is opened, store { sessionId, messages } here
+  const [resumeSession, setResumeSession] = useState(null);
 
-  // BUG: error is never cleared when switching tabs
   const handleTabSwitch = (tabKey) => {
     setActiveTab(tabKey);
-    // Should call setError(null) here but doesn't
+    setError(null);
+  };
+
+  const handleOpenSession = (sessionId, messages) => {
+    setResumeSession({ sessionId, messages });
+    setActiveTab('chat');
+    setError(null);
   };
 
   return (
@@ -55,9 +62,18 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 'chat' && <Chat setError={setError} />}
+        {activeTab === 'chat' && (
+          <Chat
+            setError={setError}
+            resumeSession={resumeSession}
+            onSessionResumed={() => setResumeSession(null)}
+            onGoToDocuments={() => handleTabSwitch('documents')}
+          />
+        )}
         {activeTab === 'documents' && <Upload setError={setError} />}
-        {activeTab === 'history' && <History setError={setError} />}
+        {activeTab === 'history' && (
+          <History setError={setError} onOpenSession={handleOpenSession} />
+        )}
       </main>
     </div>
   );

@@ -1,96 +1,111 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
-import { fetchHistory, fetchSessionMessages } from './api';
+import { Search, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { fetchHistory, fetchSessionMessages, deleteSession, clearAllHistory } from './api';
 
-export default function History({ setError }) {
+function sessionTitle(session) {
+  const raw = session.first_user_message || session.last_message || '';
+  if (!raw) return 'Untitled Session';
+  return raw.length > 60 ? raw.slice(0, 60).trimEnd() + '…' : raw;
+}
+
+export default function History({ setError, onOpenSession }) {
   const [sessions, setSessions] = useState([]);
-  const [selectedSession, setSelectedSession] = useState(null);
-  const [sessionMessages, setSessionMessages] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [loadingId, setLoadingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [clearingAll, setClearingAll] = useState(false);
   const LIMIT = 10;
 
-  // BUG: missing `searchTerm` in dependency array — search doesn't trigger refetch
   useEffect(() => {
     loadHistory();
-  }, [page]);
+  }, [page, searchTerm]);
 
   const loadHistory = async () => {
-    const data = await fetchHistory(page, LIMIT);
-    if (data && data.sessions) {
-      setSessions(data.sessions);
-      setTotalCount(data.total || 0);
+    try {
+      const data = await fetchHistory(page, LIMIT);
+      if (data && data.sessions) {
+        setSessions(data.sessions);
+        setTotalCount(data.total || 0);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load history.');
     }
   };
 
   const handleSelectSession = async (session) => {
-    setSelectedSession(session);
-    setLoadingMessages(true);
-    const data = await fetchSessionMessages(session.session_id);
-    if (data && data.messages) {
-      setSessionMessages(data.messages);
-    } else {
-      setError('Failed to load session messages.');
+    if (loadingId || deletingId) return;
+    setLoadingId(session.session_id);
+    try {
+      const data = await fetchSessionMessages(session.session_id);
+      onOpenSession(session.session_id, data.messages || []);
+    } catch (err) {
+      setError(err.message || 'Failed to load session messages.');
+    } finally {
+      setLoadingId(null);
     }
-    setLoadingMessages(false);
   };
 
-  const handleBack = () => {
-    setSelectedSession(null);
-    setSessionMessages([]);
+  const handleDeleteSession = async (e, session) => {
+    e.stopPropagation(); // don't open the session
+    if (!window.confirm(`Delete "${sessionTitle(session)}"?`)) return;
+    setDeletingId(session.session_id);
+    try {
+      await deleteSession(session.session_id);
+      setSessions((prev) => prev.filter((s) => s.session_id !== session.session_id));
+      setTotalCount((c) => c - 1);
+    } catch (err) {
+      setError(err.message || 'Failed to delete session.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
-  // BUG: case-sensitive search — "Hello" won't match "hello"
+  const handleClearAll = async () => {
+    if (!window.confirm('Clear all chat history? This cannot be undone.')) return;
+    setClearingAll(true);
+    try {
+      await clearAllHistory();
+      setSessions([]);
+      setTotalCount(0);
+    } catch (err) {
+      setError(err.message || 'Failed to clear history.');
+    } finally {
+      setClearingAll(false);
+    }
+  };
+
   const filteredSessions = sessions.filter((s) =>
-    (s.title || s.session_id).includes(searchTerm)
+    sessionTitle(s).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // BUG: Math.floor instead of Math.ceil — last page of results is lost
-  const totalPages = Math.floor(totalCount / LIMIT);
+  const totalPages = Math.ceil(totalCount / LIMIT);
 
-  // BUG: raw ISO date strings displayed without formatting
   const formatDate = (dateStr) => {
-    return dateStr;
+    if (!dateStr) return '';
+    try {
+      return new Date(dateStr).toLocaleString();
+    } catch (_) {
+      return dateStr;
+    }
   };
-
-  if (selectedSession) {
-    return (
-      <div className="history-container">
-        <div className="history-header">
-          <button className="btn btn-outline btn-sm" onClick={handleBack}>
-            <ArrowLeft size={14} />
-            Back
-          </button>
-          <h2>Session: {selectedSession.title || selectedSession.session_id}</h2>
-        </div>
-
-        <div className="session-messages">
-          {loadingMessages ? (
-            <div className="loading-spinner">Loading messages...</div>
-          ) : (
-            sessionMessages.map((msg, idx) => (
-              <div key={idx} className={`history-bubble ${msg.role}`}>
-                <div className="bubble-label">
-                  {msg.role === 'user' ? 'You' : 'BotAssist'}
-                </div>
-                <div className="bubble-content">
-                  <p>{msg.content}</p>
-                </div>
-                <div className="bubble-time">{formatDate(msg.timestamp)}</div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="history-container">
       <div className="history-header">
         <h2>Chat History</h2>
+        {sessions.length > 0 && (
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={handleClearAll}
+            disabled={clearingAll}
+            style={{ color: 'hsl(var(--destructive))', borderColor: 'hsl(var(--destructive) / 0.4)' }}
+          >
+            <Trash2 size={14} />
+            {clearingAll ? 'Clearing…' : 'Clear All'}
+          </button>
+        )}
       </div>
 
       <div className="history-search">
@@ -115,17 +130,29 @@ export default function History({ setError }) {
               key={session.session_id}
               className="history-card"
               onClick={() => handleSelectSession(session)}
+              style={{
+                opacity: loadingId === session.session_id || deletingId === session.session_id ? 0.5 : 1,
+                cursor: loadingId || deletingId ? 'wait' : 'pointer',
+              }}
             >
-              <div className="history-card-title">
-                {session.title || 'Untitled Session'}
+              <div className="history-card-body">
+                <div className="history-card-title">{sessionTitle(session)}</div>
+                <div className="history-card-meta">
+                  <span>{formatDate(session.created_at)}</span>
+                  <span>{session.message_count} messages</span>
+                </div>
+                <div className="history-card-preview">
+                  {session.last_message || 'No messages'}
+                </div>
               </div>
-              <div className="history-card-meta">
-                <span>{formatDate(session.created_at)}</span>
-                <span>{session.message_count} messages</span>
-              </div>
-              <div className="history-card-preview">
-                {session.last_message || 'No messages'}
-              </div>
+              <button
+                className="btn btn-ghost btn-icon btn-sm history-delete-btn"
+                onClick={(e) => handleDeleteSession(e, session)}
+                disabled={deletingId === session.session_id}
+                title="Delete session"
+              >
+                <Trash2 size={15} />
+              </button>
             </div>
           ))
         )}

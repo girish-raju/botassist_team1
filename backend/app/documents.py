@@ -9,13 +9,10 @@ collection = chroma_client.get_or_create_collection(name="botassist_docs")
 
 
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
-    """Split text into overlapping chunks.
-
-    BUG: step uses chunk_size instead of (chunk_size - overlap), so chunks don't actually overlap.
-    """
+    """Split text into overlapping chunks."""
     chunks = []
-    # BUG: step should be (chunk_size - overlap) to create overlapping windows
-    for i in range(0, len(text), chunk_size):
+    step = chunk_size - overlap
+    for i in range(0, len(text), step):
         chunk = text[i : i + chunk_size]
         if chunk.strip():
             chunks.append(chunk.strip())
@@ -43,24 +40,18 @@ def ingest_document(filename: str, content: str, file_size: int) -> dict:
 
 
 def list_documents() -> list[dict]:
-    """List all ingested documents.
-
-    BUG: Sorts by uploaded_at ascending — newest documents appear last instead of first.
-    """
+    """List all ingested documents, newest first."""
     docs = get_all_documents()
-    # BUG: should sort descending (reverse=True) so newest docs appear first
-    docs.sort(key=lambda d: d["uploaded_at"])
+    docs.sort(key=lambda d: d["uploaded_at"], reverse=True)
     return docs
 
 
 def remove_document(doc_id: int, filename: str) -> bool:
-    """Remove a document from SQLite.
-
-    BUG: Does not delete the corresponding chunks from ChromaDB, causing orphaned vectors.
-    No file type validation is performed on upload either.
-    """
-    # BUG: Missing ChromaDB deletion — chunks for this document remain as orphans
-    # Should do: collection.delete(where={"filename": filename})
+    """Remove a document from SQLite and delete its chunks from ChromaDB."""
+    try:
+        collection.delete(where={"filename": filename})
+    except Exception:
+        pass  # ChromaDB delete is best-effort; proceed with DB deletion
     return delete_document(doc_id)
 
 

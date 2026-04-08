@@ -686,6 +686,7 @@ body {
 .history-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -744,11 +745,34 @@ body {
   padding: 16px;
   cursor: pointer;
   transition: border-color 150ms ease, box-shadow 150ms ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .history-card:hover {
   border-color: hsl(var(--ring) / 0.3);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+}
+
+.history-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-delete-btn {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 150ms ease, color 150ms ease;
+  color: hsl(var(--muted-foreground));
+}
+
+.history-card:hover .history-delete-btn {
+  opacity: 1;
+}
+
+.history-delete-btn:hover {
+  color: hsl(var(--destructive)) !important;
 }
 
 .history-card-title {
@@ -865,4 +889,90 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground));
+}
+
+/* ===== Suggested Questions ===== */
+.suggested-questions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 20px;
+  max-width: 480px;
+  width: 100%;
+}
+
+.suggested-question {
+  text-align: left;
+  white-space: normal;
+  line-height: 1.4;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+/* ===== Bubble actions (copy button) ===== */
+.bubble-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.copy-btn {
+  width: 28px;
+  height: 28px;
+  opacity: 0.5;
+  transition: opacity 150ms ease;
+}
+
+.copy-btn:hover {
+  opacity: 1;
+}
+
+/* ===== Source Citation Cards ===== */
+.sources-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 6px;
+}
+
+.source-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.source-card {
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
+  padding: 8px 10px;
+  font-size: 0.75rem;
+}
+
+.source-card-filename {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 2px;
+}
+
+.source-card-excerpt {
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.source-card-score {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* ===== Message timestamp ===== */
+.bubble-time {
+  font-size: 0.65rem;
+  color: hsl(var(--muted-foreground));
+  margin-top: 4px;
+  text-align: right;
 }

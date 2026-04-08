@@ -112,16 +112,66 @@ def get_chat_history(session_id: str) -> list[dict]:
     return [dict(row) for row in rows]
 
 
-def search_history(keyword: str) -> list[dict]:
-    """Search chat history by keyword.
-
-    BUG: Uses f-string interpolation instead of parameterized query — SQL injection vulnerability.
-    """
+def delete_session(session_id: str) -> bool:
+    """Delete all messages for a session. Returns True if any rows were deleted."""
     conn = get_connection()
     cursor = conn.cursor()
-    # BUG: SQL injection — keyword is interpolated directly into the query
-    query = f"SELECT id, session_id, role, content, created_at FROM chat_history WHERE content LIKE '%{keyword}%' ORDER BY created_at DESC"
-    cursor.execute(query)
+    cursor.execute("DELETE FROM chat_history WHERE session_id = ?", (session_id,))
+    conn.commit()
+    deleted = cursor.rowcount > 0
+    conn.close()
+    return deleted
+
+
+def delete_all_history() -> int:
+    """Delete all chat history. Returns number of rows deleted."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM chat_history")
+    conn.commit()
+    count = cursor.rowcount
+    conn.close()
+    return count
+
+
+def search_history(keyword: str) -> list[dict]:
+    """Search chat history by keyword."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, session_id, role, content, created_at FROM chat_history WHERE content LIKE ? ORDER BY created_at DESC",
+        (f"%{keyword}%",),
+    )
     rows = cursor.fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+
+def get_history_sessions(page: int = 1, limit: int = 20) -> tuple[list[dict], int]:
+    """Return paginated list of chat sessions with metadata."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    offset = (page - 1) * limit
+
+    cursor.execute(
+        """
+        SELECT
+            session_id,
+            MIN(created_at) AS created_at,
+            COUNT(*) AS message_count,
+            MIN(CASE WHEN role = 'user' THEN content END) AS first_user_message,
+            MAX(CASE WHEN role = 'user' THEN content END) AS last_message
+        FROM chat_history
+        GROUP BY session_id
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+        """,
+        (limit, offset),
+    )
+    rows = cursor.fetchall()
+
+    cursor.execute("SELECT COUNT(DISTINCT session_id) AS total FROM chat_history")
+    total = cursor.fetchone()["total"]
+
+    conn.close()
+    return [dict(row) for row in rows], total

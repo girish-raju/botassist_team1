@@ -1,26 +1,25 @@
 from __future__ import annotations
 
 import json
-import traceback
 import uuid
+from typing import List, Optional
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.database import get_chat_history, init_db, save_chat_message, search_history
+from app.database import delete_all_history, delete_session, get_chat_history, get_history_sessions, init_db, save_chat_message, search_history
 from app.documents import ingest_document, list_documents, remove_document
 from app.rag import query_documents
 
 app = FastAPI(title="BotAssist", version="0.1.0", description="RAG-powered document assistant")
 
-# BUG: CORS allows all origins — should be restricted to specific frontend domains
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type"],
 )
 
 
@@ -34,13 +33,19 @@ def startup():
 
 class QueryRequest(BaseModel):
     message: str
-    session_id: str | None = None
+    session_id: Optional[str] = None
     top_k: int = 5
+
+
+class SourceItem(BaseModel):
+    filename: str
+    chunk_content: str
+    relevance_score: Optional[float] = None
 
 
 class QueryResponse(BaseModel):
     answer: str
-    sources: list[str]
+    sources: List[SourceItem]
     session_id: str
     chunks_used: int
 
@@ -53,22 +58,26 @@ def health_check():
     return {"status": "ok", "service": "BotAssist"}
 
 
+ALLOWED_EXTENSIONS = {".txt", ".md", ".csv"}
+
+
 @app.post("/documents/upload")
 async def upload_document(file: UploadFile = File(...)):
-    """Upload and ingest a document.
-
-    BUG: No file type validation — any file type is accepted.
-    """
+    """Upload and ingest a document."""
+    import os
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Unsupported file type '{ext}'. Allowed: {', '.join(ALLOWED_EXTENSIONS)}")
     try:
         content_bytes = await file.read()
         content = content_bytes.decode("utf-8")
         file_size = len(content_bytes)
-
         result = ingest_document(file.filename, content, file_size)
         return {"message": "Document uploaded successfully", "document": result}
-    except Exception as e:
-        # BUG: Stack trace leaks internal details to the client
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}\n{traceback.format_exc()}")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="File must be UTF-8 encoded text.")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Upload failed. Please try again.")
 
 
 @app.get("/documents")
@@ -92,23 +101,18 @@ def delete_document_route(doc_id: int, filename: str):
 
 @app.post("/query", response_model=QueryResponse)
 def query(request: QueryRequest):
-    """Query documents using RAG.
+    """Query documents using RAG."""
+    if not request.message or not request.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
-    BUG: No validation that message is non-empty.
-    BUG: No rate limiting — endpoint can be abused.
-    """
     session_id = request.session_id or str(uuid.uuid4())
-
-    # Save user message
     save_chat_message(session_id, "user", request.message)
 
     try:
         result = query_documents(request.message, top_k=request.top_k)
-    except Exception as e:
-        # BUG: Stack trace leaks internal details
-        raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}\n{traceback.format_exc()}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Query failed. Please try again.")
 
-    # Save assistant response
     save_chat_message(session_id, "assistant", result["answer"], json.dumps(result["sources"]))
 
     return QueryResponse(
@@ -128,9 +132,29 @@ def get_chat(session_id: str):
 
 @app.get("/search")
 def search(keyword: str):
-    """Search chat history by keyword.
-
-    Note: This calls search_history which has a SQL injection vulnerability.
-    """
+    """Search chat history by keyword."""
     results = search_history(keyword)
     return {"keyword": keyword, "results": results, "total": len(results)}
+
+
+@app.get("/history/sessions")
+def list_sessions(page: int = 1, limit: int = 20):
+    """List chat sessions with metadata, paginated."""
+    sessions, total = get_history_sessions(page=page, limit=limit)
+    return {"sessions": sessions, "total": total, "page": page, "limit": limit}
+
+
+@app.delete("/history/sessions/{session_id}")
+def delete_session_route(session_id: str):
+    """Delete all messages for a specific session."""
+    deleted = delete_session(session_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"message": "Session deleted", "session_id": session_id}
+
+
+@app.delete("/history/sessions")
+def clear_all_history():
+    """Delete all chat history."""
+    count = delete_all_history()
+    return {"message": "All history cleared", "deleted": count}

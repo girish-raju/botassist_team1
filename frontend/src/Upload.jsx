@@ -12,9 +12,11 @@ export default function Upload({ setError }) {
   }, []);
 
   const loadDocuments = async () => {
-    const data = await listDocuments();
-    if (data && data.documents) {
-      setDocuments(data.documents);
+    try {
+      const data = await listDocuments();
+      if (data && data.documents) setDocuments(data.documents);
+    } catch (err) {
+      setError(err.message || 'Failed to load documents.');
     }
   };
 
@@ -26,15 +28,15 @@ export default function Upload({ setError }) {
 
   const doUpload = async (file) => {
     setUploading(true);
-    const result = await uploadDocument(file);
-    if (result) {
-      // BUG: does not refresh the document list after upload
-      // Should call loadDocuments() here
+    try {
+      await uploadDocument(file);
       setError(null);
-    } else {
-      setError('Upload failed. Please try again.');
+      await loadDocuments();
+    } catch (err) {
+      setError(err.message || 'Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   const handleDragOver = (e) => {
@@ -56,15 +58,15 @@ export default function Upload({ setError }) {
   };
 
   const handleDelete = async (doc) => {
-    // BUG: vague delete confirmation — doesn't show the document name
-    const confirmed = window.confirm('Are you sure you want to delete this item?');
+    const confirmed = window.confirm(`Delete "${doc.filename}"? This cannot be undone.`);
     if (!confirmed) return;
 
-    const result = await deleteDocument(doc.id);
-    if (result) {
+    try {
+      await deleteDocument(doc.id, doc.filename);
       setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
-    } else {
-      setError('Delete failed.');
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Delete failed.');
     }
   };
 
@@ -100,11 +102,10 @@ export default function Upload({ setError }) {
           type="file"
           className="dropzone-input"
           onChange={handleFileChange}
-          // BUG: accept includes .doc which the backend may not support
-          accept=".pdf,.txt,.md,.doc,.docx,.csv"
+          accept=".txt,.md,.csv"
           disabled={uploading}
         />
-        <p className="dropzone-hint">Supported: PDF, TXT, Markdown, Word, CSV</p>
+        <p className="dropzone-hint">Supported: TXT, Markdown, CSV</p>
       </div>
 
       <div className="documents-list">
