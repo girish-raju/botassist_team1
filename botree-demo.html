@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docs by Botree — AI-Powered Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   CSS Reset & Design Tokens
+   ═══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue-50: #f0f9ff; --blue-100: #e0f2fe; --blue-200: #bae6fd;
+  --blue-400: #38bdf8; --blue-500: #0ea5e9; --blue-600: #0284c7; --blue-700: #0369a1;
+  --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-300: #d1d5db;
+  --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563;
+  --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+  --green-500: #22c55e; --purple-500: #a855f7; --orange-500: #f97316;
+  --teal-500: #14b8a6; --pink-500: #ec4899; --red-500: #ef4444;
+  --nav-h: 64px; --sidebar-w: 280px; --toc-w: 200px; --radius: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--gray-800);
+  background: #fff;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--blue-600); text-decoration: none; }
+a:hover { color: var(--blue-700); }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; background: var(--gray-100); padding: 2px 6px; border-radius: 4px; }
+
+/* ═══════════════════════════════════════════════════════
+   Top Navigation
+   ═══════════════════════════════════════════════════════ */
+.topnav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  height: var(--nav-h);
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--gray-200);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+}
+.nav-left { display: flex; align-items: center; gap: 12px; }
+.hamburger { display: none; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 8px; color: var(--gray-600); }
+.hamburger:hover { background: var(--gray-100); }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--gray-900); }
+.logo-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--blue-500), var(--blue-700));
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-icon svg { width: 18px; height: 18px; }
+
+.nav-tabs { display: flex; gap: 4px; }
+.nav-tab {
+  padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  color: var(--gray-600); transition: all 0.15s;
+  border-bottom: 2px solid transparent;
+  position: relative;
+}
+.nav-tab:hover { color: var(--gray-800); background: var(--gray-50); }
+.nav-tab.active { color: var(--blue-600); background: var(--blue-50); border-bottom-color: var(--blue-500); }
+
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-right a { color: var(--gray-500); display: flex; align-items: center; }
+.nav-right a:hover { color: var(--gray-800); }
+.btn-signin {
+  padding: 7px 16px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  border: 1px solid var(--gray-300); color: var(--gray-700); transition: all 0.15s;
+}
+.btn-signin:hover { border-color: var(--gray-400); background: var(--gray-50); }
+
+/* ═══════════════════════════════════════════════════════
+   Tab Content Layout
+   ═══════════════════════════════════════════════════════ */
+.tab-content { display: none; margin-top: var(--nav-h); }
+.tab-content.active { display: block; }
+
+/* ═══════════════════════════════════════════════════════
+   TAB 1: Documentation Portal
+   ═══════════════════════════════════════════════════════ */
+#tab-docs.active { display: flex; }
+#tab-docs { min-height: calc(100vh - var(--nav-h)); }
+
+/* -- Docs Sidebar -- */
+.docs-sidebar {
+  width: var(--sidebar-w); min-width: var(--sidebar-w);
+  position: fixed; top: var(--nav-h); bottom: 0; left: 0;
+  overflow-y: auto; border-right: 1px solid var(--gray-200);
+  padding: 16px; background: #fff; z-index: 50;
+}
+.sidebar-search {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gray-200);
+  background: var(--gray-50); margin-bottom: 16px; font-size: 14px; color: var(--gray-400);
+}
+.sidebar-search input {
+  border: none; background: none; outline: none; flex: 1; font-family: inherit;
+  font-size: 14px; color: var(--gray-700);
+}
+.sidebar-search kbd {
+  font-family: 'Inter', sans-serif; font-size: 11px; padding: 2px 6px;
+  border-radius: 4px; border: 1px solid var(--gray-300); background: #fff; color: var(--gray-500);
+}
+.sidebar-section { margin-bottom: 4px; }
+.sidebar-section-title {
+  display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px;
+  font-size: 13px; font-weight: 600; color: var(--gray-700); cursor: pointer;
+  user-select: none; width: 100%;
+}
+.sidebar-section-title:hover { background: var(--gray-50); }
+.sidebar-section-title .chevron {
+  width: 16px; height: 16px; transition: transform 0.15s;
+  color: var(--gray-400); flex-shrink: 0;
+}
+.sidebar-section.collapsed .chevron { transform: rotate(-90deg); }
+.sidebar-section.collapsed .sidebar-items { display: none; }
+.sidebar-items { padding-left: 16px; }
+.sidebar-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px; border-radius: 6px; font-size: 13px;
+  color: var(--gray-600); cursor: pointer; width: 100%;
+}
+.sidebar-item:hover { background: var(--gray-50); color: var(--gray-800); }
+.sidebar-item.active { background: var(--blue-50); color: var(--blue-600); font-weight: 500; }
+.sidebar-badge {
+  font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600;
+  margin-left: auto; flex-shrink: 0;
+}
+.badge-core { background: var(--blue-100); color: var(--blue-700); }
+.badge-ai { background: #f0fdf4; color: #15803d; }
+.badge-new { background: #fef3c7; color: #92400e; }
+.badge-aiml { background: #faf5ff; color: #7e22ce; }
+.sidebar-sub { padding-left: 12px; }
+.sidebar-sub .sidebar-item { font-size: 12.5px; padding: 4px 8px; }
+
+/* -- Docs Main Content -- */
+.docs-main {
+  flex: 1; margin-left: var(--sidebar-w); margin-right: 0;
+  padding: 0; min-width: 0;
+}
+.docs-content { max-width: 900px; margin: 0 auto; padding: 40px 48px; }
+
+.docs-hero { margin-bottom: 40px; }
+.docs-hero h1 { font-size: 36px; font-weight: 700; margin-bottom: 12px; color: var(--gray-900); }
+.docs-hero p { font-size: 17px; color: var(--gray-600); line-height: 1.7; max-width: 680px; }
+
+.stats-bar {
+  display: flex; flex-wrap: wrap; gap: 0; background: var(--blue-50);
+  border-radius: var(--radius); margin-bottom: 48px; overflow: hidden;
+  border: 1px solid var(--blue-100);
+}
+.stat {
+  flex: 1; min-width: 140px; padding: 16px 20px; text-align: center;
+  border-right: 1px solid var(--blue-100);
+}
+.stat:last-child { border-right: none; }
+.stat-value { font-size: 22px; font-weight: 700; color: var(--blue-700); }
+.stat-label { font-size: 12px; color: var(--blue-600); font-weight: 500; margin-top: 2px; }
+
+.section-title { font-size: 22px; font-weight: 700; color: var(--gray-900); margin-bottom: 20px; }
+.section-title::before { content: ''; display: inline-block; width: 4px; height: 22px; background: var(--blue-500); border-radius: 2px; margin-right: 10px; vertical-align: middle; }
+
+.cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 48px; }
+.card {
+  border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 24px;
+  transition: all 0.15s; cursor: pointer;
+}
+.card:hover { border-color: var(--gray-300); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.card-icon {
+  width: 42px; height: 42px; border-radius: 10px; display: flex;
+  align-items: center; justify-content: center; margin-bottom: 14px; font-size: 20px;
+}
+.card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--gray-900); }
+.card p { font-size: 13px; color: var(--gray-500); line-height: 1.5; }
+.card-link { font-size: 13px; color: var(--blue-600); font-weight: 500; margin-top: 10px; display: inline-block; }
+.card-link:hover { color: var(--blue-700); }
+
+.feature-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 48px; }
+.feature-card {
+  padding: 20px; border: 1px solid var(--gray-200); border-radius: var(--radius);
+  transition: all 0.15s;
+}
+.feature-card:hover { border-color: var(--gray-300); box-shadow: var(--shadow); }
+.feature-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.feature-card p { font-size: 12.5px; color: var(--gray-500); line-height: 1.5; }
+
+.docs-footer {
+  border-top: 1px solid var(--gray-200); padding: 32px 48px;
+  text-align: center; color: var(--gray-400); font-size: 13px;
+}
+
+/* -- Docs Right TOC -- */
+.docs-toc {
+  width: var(--toc-w); position: fixed; top: calc(var(--nav-h) + 40px);
+  right: 24px; padding: 0 16px;
+}
+.docs-toc h4 { font-size: 12px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.toc-link {
+  display: block; padding: 4px 0; font-size: 13px; color: var(--gray-500);
+  border-left: 2px solid var(--gray-200); padding-left: 12px; margin-bottom: 4px;
+}
+.toc-link:hover { color: var(--gray-700); }
+.toc-link.active { color: var(--blue-600); border-left-color: var(--blue-500); font-weight: 500; }
+
+/* -- Floating Chatbot Widget -- */
+.chatbot-fab {
+  position: fixed; bottom: 24px; right: 24px; z-index: 900;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-500), var(--blue-700));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(14,165,233,0.4); transition: all 0.2s;
+}
+.chatbot-fab:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(14,165,233,0.5); }
+.chatbot-fab svg { width: 24px; height: 24px; }
+
+.chatbot-panel {
+  position: fixed; bottom: 92px; right: 24px; z-index: 900;
+  width: 400px; height: 500px; background: #fff;
+  border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  display: none; flex-direction: column; overflow: hidden;
+  border: 1px solid var(--gray-200);
+}
+.chatbot-panel.open { display: flex; }
+.chatbot-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--gray-200);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.chatbot-header-left { display: flex; align-items: center; gap: 10px; }
+.chatbot-header-left .status { width: 8px; height: 8px; border-radius: 50%; background: var(--green-500); }
+.chatbot-header-left span { font-weight: 600; font-size: 15px; }
+.chatbot-close { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--gray-400); }
+.chatbot-close:hover { background: var(--gray-100); color: var(--gray-600); }
+
+.chatbot-messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.chatbot-msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }
+.chatbot-msg.bot { background: var(--gray-50); border: 1px solid var(--gray-100); align-self: flex-start; border-bottom-left-radius: 4px; }
+.chatbot-msg.user { background: var(--blue-500); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+.chatbot-msg strong { font-weight: 600; }
+.chatbot-msg ul { margin: 6px 0; padding-left: 18px; }
+.chatbot-msg li { margin-bottom: 3px; }
+.chatbot-cite {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 4px; font-size: 10px; font-weight: 700;
+  background: var(--blue-100); color: var(--blue-700); margin: 0 2px; vertical-align: middle;
+}
+.chatbot-source-link { display: inline-block; font-size: 12px; color: var(--blue-600); margin-top: 6px; }
+.chatbot-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chatbot-chip {
+  padding: 5px 12px; border-radius: 20px; font-size: 12px;
+  border: 1px solid var(--blue-200); color: var(--blue-600); background: var(--blue-50);
+  cursor: pointer; transition: all 0.15s;
+}
+.chatbot-chip:hover { background: var(--blue-100); }
+
+.chatbot-input-area {
+  padding: 12px 16px; border-top: 1px solid var(--gray-200);
+  display: flex; gap: 8px; align-items: flex-end;
+}
+.chatbot-input-area textarea {
+  flex: 1; resize: none; border: 1px solid var(--gray-200); border-radius: 8px;
+  padding: 8px 12px; font-family: inherit; font-size: 13px; outline: none;
+  min-height: 38px; max-height: 80px;
+}
+.chatbot-input-area textarea:focus { border-color: var(--blue-400); }
+.chatbot-send {
+  width: 38px; height: 38px; border-radius: 8px;
+  background: var(--blue-500); color: #fff;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.chatbot-send:hover { background: var(--blue-600); }
+.chatbot-footer { padding: 8px 16px; text-align: center; font-size: 11px; color: var(--gray-400); border-top: 1px solid var(--gray-100); }
+
+/* ═══════════════════════════════════════════════════════
+   TAB 2: Ask AI (Perplexity-style)
+   ═══════════════════════════════════════════════════════ */
+#tab-ai.active { display: flex; height: calc(100vh - var(--nav-h)); overflow: hidden; }
+
+.ai-sidebar {
+  width: 260px; min-width: 260px; border-right: 1px solid var(--gray-200);
+  display: flex; flex-direction: column; background: #fff;
+}
+.ai-sidebar-top { padding: 16px; }
+.ai-new-thread {
+  width: 100%; padding: 10px 16px; border-radius: 8px;
+  border: 1px solid var(--gray-300); font-size: 14px; font-weight: 500;
+  color: var(--gray-700); display: flex; align-items: center; gap: 8px;
+  transition: all 0.15s;
+}
+.ai-new-thread:hover { background: var(--gray-50); border-color: var(--gray-400); }
+.ai-threads { flex: 1; overflow-y: auto; padding: 0 12px; }
+.ai-thread-group { margin-bottom: 16px; }
+.ai-thread-group-title { font-size: 11px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+.ai-thread-item {
+  padding: 10px 12px; border-radius: 8px; cursor: pointer;
+  border-left: 3px solid transparent; margin-bottom: 2px;
+}
+.ai-thread-item:hover { background: var(--gray-50); }
+.ai-thread-item.active { background: var(--blue-50); border-left-color: var(--blue-500); }
+.ai-thread-item .title { font-size: 13px; font-weight: 600; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai-thread-item .preview { font-size: 12px; color: var(--gray-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.ai-sidebar-footer { padding: 16px; border-top: 1px solid var(--gray-200); }
+.ai-sidebar-footer a { font-size: 13px; color: var(--gray-500); display: flex; align-items: center; gap: 6px; }
+.ai-sidebar-footer a:hover { color: var(--blue-600); }
+
+.ai-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.ai-messages { flex: 1; overflow-y: auto; padding: 32px 0 120px; }
+.ai-messages-inner { max-width: 768px; margin: 0 auto; padding: 0 32px; }
+
+/* Welcome state */
+.ai-welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 80px; }
+.ai-welcome-icon {
+  width: 64px; height: 64px; border-radius: 16px;
+  background: linear-gradient(135deg, var(--blue-400), var(--blue-600));
+  display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+}
+.ai-welcome-icon svg { width: 32px; height: 32px; color: #fff; }
+.ai-welcome h2 { font-size: 26px; font-weight: 700; margin-bottom: 8px; color: var(--gray-900); }
+.ai-welcome p { font-size: 15px; color: var(--gray-500); text-align: center; max-width: 460px; margin-bottom: 28px; }
+.ai-suggestions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 520px; }
+.ai-suggestion {
+  padding: 16px; border: 1px solid var(--gray-200); border-radius: var(--radius);
+  text-align: left; transition: all 0.15s; cursor: pointer;
+}
+.ai-suggestion:hover { border-color: var(--blue-300); background: var(--blue-50); }
+.ai-suggestion h4 { font-size: 13px; font-weight: 600; color: var(--gray-800); margin-bottom: 4px; }
+.ai-suggestion p { font-size: 12px; color: var(--gray-500); line-height: 1.4; }
+
+/* Answer block (Perplexity-style) */
+.ai-answer-block { margin-bottom: 32px; }
+.ai-question {
+  font-size: 18px; font-weight: 700; color: var(--gray-900);
+  padding-bottom: 16px; border-bottom: 1px solid var(--gray-200); margin-bottom: 16px;
+}
+.ai-sources-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 16px; }
+.ai-source-card {
+  flex-shrink: 0; padding: 10px 14px; border: 1px solid var(--gray-200);
+  border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.15s; max-width: 200px;
+  display: flex; align-items: center; gap: 8px;
+}
+.ai-source-card:hover { border-color: var(--blue-300); background: var(--blue-50); }
+.ai-source-card.highlight { border-color: var(--blue-400); background: var(--blue-50); box-shadow: 0 0 0 2px var(--blue-200); }
+.ai-source-num {
+  width: 22px; height: 22px; border-radius: 6px; background: var(--blue-100);
+  color: var(--blue-700); font-weight: 700; font-size: 11px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ai-source-card .label { font-weight: 500; color: var(--gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.ai-answer-text { font-size: 15px; line-height: 1.8; color: var(--gray-700); margin-bottom: 20px; }
+.ai-answer-text strong { color: var(--gray-900); }
+.ai-answer-text ul { margin: 8px 0; padding-left: 20px; }
+.ai-answer-text li { margin-bottom: 6px; }
+.ai-cite {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 4px; font-size: 10px; font-weight: 700;
+  background: var(--blue-100); color: var(--blue-700); margin: 0 2px;
+  cursor: pointer; vertical-align: middle; transition: all 0.15s;
+}
+.ai-cite:hover { background: var(--blue-200); }
+
+.ai-related { border: 1px solid var(--gray-200); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
+.ai-related-title { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--gray-500); background: var(--gray-50); border-bottom: 1px solid var(--gray-200); }
+.ai-related-item {
+  padding: 10px 16px; font-size: 14px; color: var(--blue-600); cursor: pointer;
+  border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; gap: 8px;
+}
+.ai-related-item:last-child { border-bottom: none; }
+.ai-related-item:hover { background: var(--gray-50); }
+
+.ai-answer-actions { display: flex; align-items: center; gap: 8px; }
+.ai-action-btn {
+  padding: 5px 12px; border-radius: 6px; font-size: 12px; color: var(--gray-500);
+  border: 1px solid var(--gray-200); display: flex; align-items: center; gap: 4px;
+  transition: all 0.15s;
+}
+.ai-action-btn:hover { background: var(--gray-50); color: var(--gray-700); }
+.ai-sources-count { font-size: 12px; color: var(--gray-400); margin-left: 8px; }
+
+/* AI Input bar */
+.ai-input-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 16px 32px 20px;
+  background: linear-gradient(transparent, #fff 30%);
+}
+.ai-input-wrap {
+  max-width: 768px; margin: 0 auto; position: relative;
+  border: 1px solid var(--gray-300); border-radius: 12px;
+  background: #fff; box-shadow: var(--shadow-md); overflow: hidden;
+}
+.ai-input-wrap:focus-within { border-color: var(--blue-400); box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
+.ai-input-wrap textarea {
+  width: 100%; resize: none; border: none; outline: none;
+  padding: 14px 56px 14px 18px; font-family: inherit; font-size: 15px;
+  min-height: 50px; max-height: 200px; line-height: 1.5;
+}
+.ai-input-send {
+  position: absolute; right: 10px; bottom: 10px;
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--blue-500); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.ai-input-send:hover { background: var(--blue-600); }
+.ai-input-send:disabled { background: var(--gray-300); cursor: not-allowed; }
+.ai-input-hint { text-align: center; font-size: 11px; color: var(--gray-400); margin-top: 6px; }
+
+/* ═══════════════════════════════════════════════════════
+   TAB 3: Sprint Plan
+   ═══════════════════════════════════════════════════════ */
+#tab-plan.active { display: block; }
+
+.plan-header {
+  background: linear-gradient(135deg, var(--blue-600), var(--blue-700) 50%, var(--purple-500));
+  color: #fff; padding: 48px 32px; text-align: center;
+}
+.plan-header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+.plan-header .subtitle { font-size: 16px; opacity: 0.85; margin-bottom: 4px; }
+.plan-header .date { font-size: 14px; opacity: 0.65; }
+
+.plan-subnav {
+  position: sticky; top: var(--nav-h); z-index: 40;
+  background: #fff; border-bottom: 1px solid var(--gray-200);
+  display: flex; gap: 0; overflow-x: auto; padding: 0 32px;
+}
+.plan-subnav a {
+  padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--gray-500);
+  white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.15s;
+}
+.plan-subnav a:hover { color: var(--gray-700); }
+.plan-subnav a.active { color: var(--blue-600); border-bottom-color: var(--blue-500); }
+
+.plan-content { max-width: 1280px; margin: 0 auto; padding: 32px; }
+.plan-section { margin-bottom: 40px; }
+.plan-section-title { font-size: 20px; font-weight: 700; color: var(--gray-900); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--gray-200); }
+
+.team-overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+.team-card {
+  border-radius: var(--radius); padding: 24px; color: #fff; position: relative; overflow: hidden;
+}
+.team-card::after { content: ''; position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+.team-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.team-card p { font-size: 13px; opacity: 0.9; }
+.team-card.t1 { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.team-card.t2 { background: linear-gradient(135deg, #16a34a, #15803d); }
+.team-card.t3 { background: linear-gradient(135deg, #9333ea, #7e22ce); }
+
+.timeline { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 32px; }
+.timeline-block {
+  padding: 16px; border-radius: var(--radius); text-align: center;
+  border: 1px solid var(--gray-200); background: #fff;
+}
+.timeline-block .time { font-size: 12px; font-weight: 600; color: var(--blue-600); margin-bottom: 4px; }
+.timeline-block .label { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+.timeline-block .desc { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+
+.phase-block {
+  border: 1px solid var(--gray-200); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 12px;
+}
+.phase-block-header {
+  padding: 14px 20px; background: var(--gray-50); cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  user-select: none;
+}
+.phase-block-header h4 { font-size: 14px; font-weight: 600; }
+.phase-block-header .chevron { width: 20px; height: 20px; color: var(--gray-400); transition: transform 0.15s; }
+.phase-block.collapsed .phase-block-body { display: none; }
+.phase-block.collapsed .chevron { transform: rotate(-90deg); }
+.phase-block-body { padding: 16px 20px; }
+
+.task-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 8px 0; border-bottom: 1px solid var(--gray-100);
+}
+.task-row:last-child { border-bottom: none; }
+.task-id { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--blue-600); min-width: 28px; }
+.task-content { flex: 1; font-size: 13px; color: var(--gray-700); }
+.task-tag {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; flex-shrink: 0;
+}
+.tag-critical { background: #fef2f2; color: var(--red-500); }
+.tag-done { background: #f0fdf4; color: var(--green-500); }
+
+.merge-list { counter-reset: merge; }
+.merge-list li {
+  counter-increment: merge; padding: 10px 16px; border-bottom: 1px solid var(--gray-100);
+  font-size: 14px; color: var(--gray-700); display: flex; align-items: center; gap: 10px;
+}
+.merge-list li::before {
+  content: counter(merge); width: 24px; height: 24px; border-radius: 50%;
+  background: var(--blue-100); color: var(--blue-700); font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.checklist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.check-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+  border: 1px solid var(--gray-200); border-radius: 8px; font-size: 13px; color: var(--gray-700);
+}
+.check-box { width: 16px; height: 16px; border: 2px solid var(--gray-300); border-radius: 4px; flex-shrink: 0; }
+
+.risk-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+.risk-card {
+  padding: 16px; border: 1px solid var(--gray-200); border-radius: var(--radius);
+  background: #fff;
+}
+.risk-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--gray-800); }
+.risk-card p { font-size: 12px; color: var(--gray-500); }
+
+.conflict-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.conflict-table th { background: var(--gray-50); padding: 10px 16px; text-align: left; font-weight: 600; border-bottom: 2px solid var(--gray-200); }
+.conflict-table td { padding: 10px 16px; border-bottom: 1px solid var(--gray-100); }
+
+.plan-footer {
+  text-align: center; padding: 32px; color: var(--gray-400); font-size: 13px;
+  border-top: 1px solid var(--gray-200); margin-top: 32px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 1200px) {
+  .docs-toc { display: none; }
+}
+@media (max-width: 1024px) {
+  .cards-grid, .feature-cards { grid-template-columns: repeat(2, 1fr); }
+  .team-overview { grid-template-columns: 1fr; }
+  .timeline { grid-template-columns: repeat(3, 1fr); }
+  .checklist-grid { grid-template-columns: repeat(2, 1fr); }
+  .risk-cards { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .hamburger { display: flex; }
+  .docs-sidebar { transform: translateX(-100%); transition: transform 0.2s; z-index: 100; }
+  .docs-sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+  .docs-main { margin-left: 0; }
+  .docs-content { padding: 24px 20px; }
+  .cards-grid, .feature-cards { grid-template-columns: 1fr; }
+  .nav-tabs { display: none; }
+  .mobile-tabs { display: flex !important; }
+  .ai-sidebar { display: none; }
+  .ai-suggestions { grid-template-columns: 1fr; }
+  .timeline { grid-template-columns: repeat(2, 1fr); }
+  .checklist-grid { grid-template-columns: 1fr; }
+  .chatbot-panel { width: calc(100vw - 32px); right: 16px; bottom: 86px; height: 60vh; }
+  .plan-content { padding: 20px; }
+  .conflict-table { font-size: 12px; }
+  .conflict-table th, .conflict-table td { padding: 8px 10px; }
+}
+.mobile-tabs {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0;
+  background: #fff; border-top: 1px solid var(--gray-200); z-index: 1000;
+  padding: 8px 16px; justify-content: space-around;
+}
+.mobile-tab { font-size: 12px; color: var(--gray-500); text-align: center; padding: 6px; }
+.mobile-tab.active { color: var(--blue-600); }
+
+/* Print styles for Sprint Plan */
+@media print {
+  .topnav, .plan-subnav, .chatbot-fab, .chatbot-panel, .mobile-tabs { display: none !important; }
+  .tab-content { display: block !important; margin-top: 0 !important; }
+  #tab-docs, #tab-ai { display: none !important; }
+  #tab-plan { display: block !important; }
+  .plan-header { padding: 24px; }
+  .phase-block.collapsed .phase-block-body { display: block !important; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+
+/* Typing indicator */
+.typing-dots { display: flex; gap: 4px; padding: 4px 0; }
+.typing-dots span {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--gray-400);
+  animation: bounce 1.4s infinite ease-in-out;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.16s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.32s; }
+@keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-8px); } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     TOP NAVIGATION
+     ═══════════════════════════════════════════════════════ -->
+<nav class="topnav">
+  <div class="nav-left">
+    <button class="hamburger" onclick="document.querySelector('.docs-sidebar').classList.toggle('open')">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h14M3 10h14M3 14h14"/></svg>
+    </button>
+    <a class="logo" href="#">
+      <span class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      </span>
+      Botree
+    </a>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('docs')">Documentation</button>
+    <button class="nav-tab" onclick="switchTab('ai')">Ask AI</button>
+    <button class="nav-tab" onclick="switchTab('plan')">Sprint Plan</button>
+  </div>
+  <div class="nav-right">
+    <a href="https://github.com" target="_blank" title="GitHub">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </a>
+    <button class="btn-signin">Sign In</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB 1: DOCUMENTATION PORTAL
+     ═══════════════════════════════════════════════════════ -->
+<div id="tab-docs" class="tab-content active">
+  <!-- Left Sidebar -->
+  <aside class="docs-sidebar" id="docsSidebar">
+    <div class="sidebar-search">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M12 12l3 3"/></svg>
+      <input type="text" placeholder="Search docs...">
+      <kbd>&#8984;K</kbd>
+    </div>
+
+    <!-- Getting Started -->
+    <div class="sidebar-section">
+      <button class="sidebar-section-title" onclick="this.parentElement.classList.toggle('collapsed')">
+        <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        Getting Started
+      </button>
+      <div class="sidebar-items">
+        <button class="sidebar-item active">Introduction</button>
+        <button class="sidebar-item">Quick Start</button>
+        <button class="sidebar-item">Architecture</button>
+      </div>
+    </div>
+
+    <!-- Products -->
+    <div class="sidebar-section">
+      <button class="sidebar-section-title" onclick="this.parentElement.classList.toggle('collapsed')">
+        <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        Products
+      </button>
+      <div class="sidebar-items">
+        <!-- Botree DMS -->
+        <div class="sidebar-section">
+          <button class="sidebar-section-title" onclick="event.stopPropagation();this.parentElement.classList.toggle('collapsed')">
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+            Botree DMS <span class="sidebar-badge badge-core">Core</span>
+          </button>
+          <div class="sidebar-items sidebar-sub">
+            <button class="sidebar-item">Overview</button>
+            <button class="sidebar-item">Master Data</button>
+            <button class="sidebar-item">Order Management</button>
+            <button class="sidebar-item">Inventory</button>
+            <button class="sidebar-item">Schemes &amp; Claims</button>
+            <button class="sidebar-item">GST</button>
+          </div>
+        </div>
+        <!-- Botree SFA -->
+        <div class="sidebar-section">
+          <button class="sidebar-section-title" onclick="event.stopPropagation();this.parentElement.classList.toggle('collapsed')">
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+            Botree SFA <span class="sidebar-badge badge-ai">AI</span>
+          </button>
+          <div class="sidebar-items sidebar-sub">
+            <button class="sidebar-item">Overview</button>
+            <button class="sidebar-item">Route Planning</button>
+            <button class="sidebar-item">Order Taking</button>
+            <button class="sidebar-item">Merchandising</button>
+            <button class="sidebar-item">Gamification</button>
+          </div>
+        </div>
+        <!-- Botree FlexiDMS -->
+        <div class="sidebar-section">
+          <button class="sidebar-section-title" onclick="event.stopPropagation();this.parentElement.classList.toggle('collapsed')">
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+            Botree FlexiDMS
+          </button>
+          <div class="sidebar-items sidebar-sub">
+            <button class="sidebar-item">Overview</button>
+            <button class="sidebar-item">Tally Integration</button>
+            <button class="sidebar-item">Data Mapping</button>
+          </div>
+        </div>
+        <!-- Botree MyDMS -->
+        <div class="sidebar-section">
+          <button class="sidebar-section-title" onclick="event.stopPropagation();this.parentElement.classList.toggle('collapsed')">
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+            Botree MyDMS <span class="sidebar-badge badge-new">New</span>
+          </button>
+          <div class="sidebar-items sidebar-sub">
+            <button class="sidebar-item">Overview</button>
+            <button class="sidebar-item">Multi-Company</button>
+            <button class="sidebar-item">Single-Bill</button>
+          </div>
+        </div>
+        <!-- Retailer App -->
+        <div class="sidebar-section">
+          <button class="sidebar-section-title" onclick="event.stopPropagation();this.parentElement.classList.toggle('collapsed')">
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+            Retailer App
+          </button>
+          <div class="sidebar-items sidebar-sub">
+            <button class="sidebar-item">Overview</button>
+            <button class="sidebar-item">Self-Ordering</button>
+            <button class="sidebar-item">Loyalty</button>
+          </div>
+        </div>
+        <!-- Botree Insights -->
+        <div class="sidebar-section">
+          <button class="sidebar-section-title" onclick="event.stopPropagation();this.parentElement.classList.toggle('collapsed')">
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+            Botree Insights <span class="sidebar-badge badge-aiml">AI/ML</span>
+          </button>
+          <div class="sidebar-items sidebar-sub">
+            <button class="sidebar-item">Overview</button>
+            <button class="sidebar-item">Dashboards</button>
+            <button class="sidebar-item">Anomaly Detection</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Integration -->
+    <div class="sidebar-section">
+      <button class="sidebar-section-title" onclick="this.parentElement.classList.toggle('collapsed')">
+        <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        Integration
+      </button>
+      <div class="sidebar-items">
+        <button class="sidebar-item">REST APIs</button>
+        <button class="sidebar-item">Webhooks</button>
+        <button class="sidebar-item">Tally / Busy</button>
+        <button class="sidebar-item">ERP Connectors</button>
+      </div>
+    </div>
+
+    <!-- Resources -->
+    <div class="sidebar-section">
+      <button class="sidebar-section-title" onclick="this.parentElement.classList.toggle('collapsed')">
+        <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        Resources
+      </button>
+      <div class="sidebar-items">
+        <button class="sidebar-item">FAQ</button>
+        <button class="sidebar-item">Release Notes</button>
+        <button class="sidebar-item">Support</button>
+        <button class="sidebar-item">Community</button>
+        <button class="sidebar-item">Academy</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="docs-main">
+    <div class="docs-content">
+      <!-- Hero -->
+      <div class="docs-hero" id="docs-top">
+        <h1>Botree Documentation</h1>
+        <p>Complete technical documentation for the Botree product suite — the distribution management platform trusted by <strong>Nestl&eacute;</strong>, <strong>Dabur</strong>, <strong>Cipla</strong>, <strong>Amul</strong>, and 100+ leading FMCG brands. Powering 95,000+ distributors and 5M+ retail stores across India.</p>
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat"><div class="stat-value">95,000+</div><div class="stat-label">Distributors</div></div>
+        <div class="stat"><div class="stat-value">33,000+</div><div class="stat-label">Sales Reps</div></div>
+        <div class="stat"><div class="stat-value">5M+</div><div class="stat-label">Retail Stores</div></div>
+        <div class="stat"><div class="stat-value">100+</div><div class="stat-label">Brands</div></div>
+        <div class="stat"><div class="stat-value">25+</div><div class="stat-label">Years</div></div>
+      </div>
+
+      <!-- Product Suite -->
+      <h2 class="section-title" id="section-products">Product Suite</h2>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-icon" style="background:var(--blue-50);color:var(--blue-600);">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="16" height="16" rx="2"/><path d="M3 9h16M9 3v16"/></svg>
+          </div>
+          <h3>Botree DMS</h3>
+          <p>End-to-end distributor management — order-to-cash, inventory, schemes, claims, and GST compliance in one platform.</p>
+          <span class="card-link">Learn more &rarr;</span>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:#f0fdf4;color:var(--green-500);">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M11 7v4l3 2"/></svg>
+          </div>
+          <h3>Botree SFA</h3>
+          <p>AI-powered sales force automation — route optimization, digital order taking, gamified KPIs, and product recommendations.</p>
+          <span class="card-link">Learn more &rarr;</span>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:#faf5ff;color:var(--purple-500);">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          </div>
+          <h3>Botree FlexiDMS</h3>
+          <p>Lightweight DMS with seamless Tally and Busy integration — built for distributors who rely on their accounting software.</p>
+          <span class="card-link">Learn more &rarr;</span>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:#fff7ed;color:var(--orange-500);">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="18" height="14" rx="2"/><path d="M2 10h18"/></svg>
+          </div>
+          <h3>Botree MyDMS</h3>
+          <p>Multi-company, multi-brand distributor portal with single-bill convenience and unified stock management.</p>
+          <span class="card-link">Learn more &rarr;</span>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:#f0fdfa;color:var(--teal-500);">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="12" height="18" rx="2"/><circle cx="11" cy="16" r="1"/></svg>
+          </div>
+          <h3>Retailer App</h3>
+          <p>Self-ordering, scheme visibility, and loyalty programs — connecting retailers directly to distributors.</p>
+          <span class="card-link">Learn more &rarr;</span>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:#fdf2f8;color:var(--pink-500);">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l4 8h8l4-8"/><path d="M7 11l-4 8h16l-4-8"/></svg>
+          </div>
+          <h3>Botree Insights</h3>
+          <p>AI/ML-powered analytics — real-time dashboards, anomaly detection, predictive forecasting, and actionable intelligence.</p>
+          <span class="card-link">Learn more &rarr;</span>
+        </div>
+      </div>
+
+      <!-- DMS Features -->
+      <h2 class="section-title" id="section-dms">DMS Core Features</h2>
+      <div class="feature-cards">
+        <div class="feature-card">
+          <h4>Master Data Management</h4>
+          <p>Centralized product, retailer, and beat management with hierarchy-based access control.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Order-to-Cash</h4>
+          <p>Complete O2C cycle — order capture, dispatch, invoicing, outstanding tracking, and payment reconciliation.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Trade Schemes</h4>
+          <p>Design, deploy, and track quantity-based and value-based promotional schemes across distributors.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Inventory &amp; ARS</h4>
+          <p>Real-time stock tracking with auto-replenishment suggestions based on demand patterns and safety stock.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Claims Processing</h4>
+          <p>Automated claims submission, multi-level approval workflows, and credit note settlement.</p>
+        </div>
+        <div class="feature-card">
+          <h4>GST Compliance</h4>
+          <p>E-invoicing, GSTR filing automation, HSN mapping, and real-time tax computation engine.</p>
+        </div>
+      </div>
+
+      <!-- SFA Features -->
+      <h2 class="section-title" id="section-sfa">SFA Intelligence</h2>
+      <div class="feature-cards">
+        <div class="feature-card">
+          <h4>Route Optimization</h4>
+          <p>ML-powered route planning based on retailer priority, geography, order history, and traffic patterns.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Digital Order Taking</h4>
+          <p>Offline-capable order capture with real-time pricing, stock visibility, and scheme applicability.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Gamified KPIs</h4>
+          <p>Leaderboards, badges, and reward systems driving sales targets, coverage, and compliance metrics.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Product Recommender</h4>
+          <p>AI-driven suggestions based on retailer purchase history, category trends, and seasonal patterns.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Van Sales</h4>
+          <p>Cash-and-carry mode with vehicle stock management, spot billing, and real-time settlement.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Merchandising</h4>
+          <p>Planogram compliance, share-of-shelf tracking, photo audit with AI-based verification.</p>
+        </div>
+      </div>
+
+      <!-- Integrations -->
+      <h2 class="section-title" id="section-integrations">Integrations</h2>
+      <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="card" style="padding:20px;">
+          <h3 style="font-size:14px;">REST APIs</h3>
+          <p>RESTful endpoints with OAuth 2.0, rate limiting, and comprehensive Swagger documentation.</p>
+        </div>
+        <div class="card" style="padding:20px;">
+          <h3 style="font-size:14px;">Tally / Busy</h3>
+          <p>Bi-directional sync with Tally Prime and Busy Accounting for seamless data flow.</p>
+        </div>
+        <div class="card" style="padding:20px;">
+          <h3 style="font-size:14px;">ERP Connectors</h3>
+          <p>Pre-built connectors for SAP, Oracle, Microsoft Dynamics with configurable field mapping.</p>
+        </div>
+        <div class="card" style="padding:20px;">
+          <h3 style="font-size:14px;">Analytics &amp; BI</h3>
+          <p>Data export to Power BI, Tableau, and custom dashboards via streaming APIs.</p>
+        </div>
+      </div>
+
+      <!-- Get Started -->
+      <h2 class="section-title" id="section-getstarted">Get Started</h2>
+      <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 0;">
+        <div class="card" style="padding:20px; text-align:center;">
+          <div style="font-size:28px; margin-bottom:8px;">&#128640;</div>
+          <h3 style="font-size:14px;">Quick Start</h3>
+          <p>Get up and running in under 15 minutes.</p>
+        </div>
+        <div class="card" style="padding:20px; text-align:center;">
+          <div style="font-size:28px; margin-bottom:8px;">&#128187;</div>
+          <h3 style="font-size:14px;">Request Demo</h3>
+          <p>See Botree in action with your data.</p>
+        </div>
+        <div class="card" style="padding:20px; text-align:center;">
+          <div style="font-size:28px; margin-bottom:8px;">&#128279;</div>
+          <h3 style="font-size:14px;">Integration Guide</h3>
+          <p>Connect Botree to your existing systems.</p>
+        </div>
+        <div class="card" style="padding:20px; text-align:center;">
+          <div style="font-size:28px; margin-bottom:8px;">&#127891;</div>
+          <h3 style="font-size:14px;">Academy</h3>
+          <p>Self-paced courses and certifications.</p>
+        </div>
+      </div>
+    </div>
+    <div class="docs-footer">&copy; 2024 Botree Software. All rights reserved.</div>
+  </div>
+
+  <!-- Right TOC -->
+  <div class="docs-toc" id="docsToc">
+    <h4>On this page</h4>
+    <a class="toc-link active" href="#section-products" data-target="section-products">Product Suite</a>
+    <a class="toc-link" href="#section-dms" data-target="section-dms">DMS Core Features</a>
+    <a class="toc-link" href="#section-sfa" data-target="section-sfa">SFA Intelligence</a>
+    <a class="toc-link" href="#section-integrations" data-target="section-integrations">Integrations</a>
+    <a class="toc-link" href="#section-getstarted" data-target="section-getstarted">Get Started</a>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB 2: ASK AI (Perplexity-style)
+     ═══════════════════════════════════════════════════════ -->
+<div id="tab-ai" class="tab-content">
+  <!-- AI Sidebar -->
+  <aside class="ai-sidebar">
+    <div class="ai-sidebar-top">
+      <button class="ai-new-thread" onclick="resetAI()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>
+        New Thread
+      </button>
+    </div>
+    <div class="ai-threads">
+      <div class="ai-thread-group">
+        <div class="ai-thread-group-title">Today</div>
+        <div class="ai-thread-item active" onclick="handleThreadClick(this, 'dms')">
+          <div class="title">DMS Order-to-Cash Flow</div>
+          <div class="preview">How does the complete O2C cycle work...</div>
+        </div>
+        <div class="ai-thread-item" onclick="handleThreadClick(this, 'sfa')">
+          <div class="title">SFA Route Optimization</div>
+          <div class="preview">Explain AI-based route planning...</div>
+        </div>
+      </div>
+      <div class="ai-thread-group">
+        <div class="ai-thread-group-title">Yesterday</div>
+        <div class="ai-thread-item" onclick="handleThreadClick(this, 'integration')">
+          <div class="title">Tally Integration Setup</div>
+          <div class="preview">Steps to connect FlexiDMS with Tally...</div>
+        </div>
+        <div class="ai-thread-item" onclick="handleThreadClick(this, 'schemes')">
+          <div class="title">Trade Scheme Configuration</div>
+          <div class="preview">How to set up quantity-based schemes...</div>
+        </div>
+        <div class="ai-thread-item" onclick="handleThreadClick(this, 'default')">
+          <div class="title">Product Overview</div>
+          <div class="preview">Give me an overview of all Botree products...</div>
+        </div>
+      </div>
+      <div class="ai-thread-group">
+        <div class="ai-thread-group-title">Previous 7 Days</div>
+        <div class="ai-thread-item" onclick="handleThreadClick(this, 'dms')">
+          <div class="title">Inventory ARS Setup</div>
+          <div class="preview">Configure auto-replenishment for...</div>
+        </div>
+        <div class="ai-thread-item" onclick="handleThreadClick(this, 'schemes')">
+          <div class="title">Claims Processing Flow</div>
+          <div class="preview">End-to-end claims lifecycle...</div>
+        </div>
+      </div>
+    </div>
+    <div class="ai-sidebar-footer">
+      <a href="#" onclick="switchTab('docs');return false;">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 1L3 8l7 7"/></svg>
+        Back to Docs
+      </a>
+    </div>
+  </aside>
+
+  <!-- AI Main -->
+  <div class="ai-main">
+    <div class="ai-messages" id="aiMessages">
+      <div class="ai-messages-inner" id="aiMessagesInner">
+        <!-- Welcome state -->
+        <div class="ai-welcome" id="aiWelcome">
+          <div class="ai-welcome-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L9 9l-7 1 5 5-1.5 7L12 18l6.5 4L17 15l5-5-7-1z"/></svg>
+          </div>
+          <h2>Ask anything about Botree</h2>
+          <p>Trained on the complete Botree product documentation — DMS, SFA, FlexiDMS, MyDMS, Retailer App, and Insights. Ask about features, integrations, configuration, or best practices.</p>
+          <div class="ai-suggestions">
+            <button class="ai-suggestion" onclick="askAI('How does the DMS order-to-cash cycle work?')">
+              <h4>DMS Order-to-Cash</h4>
+              <p>Complete flow from order capture to payment reconciliation</p>
+            </button>
+            <button class="ai-suggestion" onclick="askAI('How does SFA route optimization work?')">
+              <h4>SFA Route Optimization</h4>
+              <p>ML-powered route planning and beat management</p>
+            </button>
+            <button class="ai-suggestion" onclick="askAI('How do I integrate with Tally?')">
+              <h4>Tally Integration</h4>
+              <p>FlexiDMS setup for Tally Prime sync</p>
+            </button>
+            <button class="ai-suggestion" onclick="askAI('How do trade schemes and claims work?')">
+              <h4>Trade Schemes &amp; Claims</h4>
+              <p>Scheme design, deployment, and claims processing</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="ai-input-bar">
+      <div class="ai-input-wrap">
+        <textarea id="aiInput" rows="1" placeholder="Ask anything about Botree..." onkeydown="handleAIKeydown(event)" oninput="autoResize(this)"></textarea>
+        <button class="ai-input-send" id="aiSendBtn" onclick="sendAIMessage()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9z"/></svg>
+        </button>
+      </div>
+      <div class="ai-input-hint">Enter to send &middot; Shift+Enter for new line</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB 3: SPRINT PLAN
+     ═══════════════════════════════════════════════════════ -->
+<div id="tab-plan" class="tab-content">
+  <div class="plan-header">
+    <h1>BotAssist &mdash; Full-Day Sprint Plan</h1>
+    <div class="subtitle">3 Teams &times; 5 Members</div>
+    <div class="date">April 8, 2026</div>
+  </div>
+
+  <div class="plan-subnav" id="planSubnav">
+    <a href="#plan-teams" class="active">Teams</a>
+    <a href="#plan-schedule">Schedule</a>
+    <a href="#plan-phase1">Phase 1</a>
+    <a href="#plan-phase2">Phase 2</a>
+    <a href="#plan-merge">Merge</a>
+    <a href="#plan-checklist">Checklist</a>
+    <a href="#plan-risks">Risks</a>
+  </div>
+
+  <div class="plan-content">
+
+    <!-- Teams -->
+    <div class="plan-section" id="plan-teams">
+      <h2 class="plan-section-title">Team Overview</h2>
+      <div class="team-overview">
+        <div class="team-card t1">
+          <h3>Team 1 — Auth, Database &amp; Backend Core</h3>
+          <p>Authentication, database schema, user management, backend security. 5 members.</p>
+        </div>
+        <div class="team-card t2">
+          <h3>Team 2 — RAG, Data Pipeline &amp; AI</h3>
+          <p>ChromaDB, data ingestion, retrieval, LLM abstraction, vector DB maintenance. 5 members.</p>
+        </div>
+        <div class="team-card t3">
+          <h3>Team 3 — Frontend, UI &amp; Deployment</h3>
+          <p>Frontend bug fixes, page development, UI components, error handling, theming. 5 members.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule -->
+    <div class="plan-section" id="plan-schedule">
+      <h2 class="plan-section-title">Timeline</h2>
+      <div class="timeline">
+        <div class="timeline-block">
+          <div class="time">9:00 AM</div>
+          <div class="label">Kickoff</div>
+          <div class="desc">Team assignments, repo setup</div>
+        </div>
+        <div class="timeline-block">
+          <div class="time">9:30 – 12:30</div>
+          <div class="label">Phase 1</div>
+          <div class="desc">Core implementation</div>
+        </div>
+        <div class="timeline-block">
+          <div class="time">12:30 PM</div>
+          <div class="label">Sync</div>
+          <div class="desc">Progress check, blockers</div>
+        </div>
+        <div class="timeline-block">
+          <div class="time">1:30 – 4:00</div>
+          <div class="label">Phase 2</div>
+          <div class="desc">Advanced features</div>
+        </div>
+        <div class="timeline-block">
+          <div class="time">4:00 – 5:00</div>
+          <div class="label">Integration</div>
+          <div class="desc">Merge, resolve conflicts</div>
+        </div>
+        <div class="timeline-block">
+          <div class="time">5:00 – 5:30</div>
+          <div class="label">Demo</div>
+          <div class="desc">Final presentation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 1 -->
+    <div class="plan-section" id="plan-phase1">
+      <h2 class="plan-section-title">Phase 1 — Core Implementation (9:30 AM – 12:30 PM)</h2>
+      <p style="color:var(--text-secondary);margin:-0.5rem 0 1rem;font-size:0.95rem;">All teams start in parallel. Teams use API contract stubs to avoid cross-team blocking.</p>
+
+      <!-- Team 1 -->
+      <div class="phase-block" id="p1t1">
+        <div class="phase-block-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h4 style="color:var(--blue-600);">Team 1 — Auth, Database &amp; Backend Core</h4>
+          <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        </div>
+        <div class="phase-block-body">
+          <div class="task-row"><span class="task-id">1A</span><span class="task-content">SQLite schema — <code>users</code> and <code>sessions</code> tables, fix SQL injection vulnerabilities</span><span class="task-tag tag-critical">CRITICAL</span></div>
+          <div class="task-row"><span class="task-id">1B</span><span class="task-content">Auth service — bcrypt password hashing, JWT token generation and validation</span><span class="task-tag tag-critical">CRITICAL</span></div>
+          <div class="task-row"><span class="task-id">1C</span><span class="task-content">Auth middleware — <code>get_current_user</code> dependency, protect upload and query routes</span></div>
+          <div class="task-row"><span class="task-id">1D</span><span class="task-content">Fix existing auth bugs + API contract stubs &mdash; fix hardcoded keys, timing attacks, document all auth API contracts for Team 3</span><span class="task-tag tag-critical">CRITICAL</span></div>
+          <div class="task-row"><span class="task-id">1E</span><span class="task-content">React Router — public/private page structure, redirect unauthenticated users</span></div>
+        </div>
+      </div>
+
+      <!-- Team 2 -->
+      <div class="phase-block" id="p1t2">
+        <div class="phase-block-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h4 style="color:var(--green-500);">Team 2 — RAG, Data Pipeline &amp; AI</h4>
+          <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        </div>
+        <div class="phase-block-body">
+          <div class="task-row"><span class="task-id">2A</span><span class="task-content">ChromaDB setup — persistent storage configuration, collection management, health checks</span></div>
+          <div class="task-row"><span class="task-id">2B</span><span class="task-content">Ingest sample docs — Botree product content (DMS, SFA, etc.) into vector DB</span></div>
+          <div class="task-row"><span class="task-id">2C</span><span class="task-content">Fix chunking — overlap bug, sort order, orphaned vectors cleanup</span><span class="task-tag tag-critical">CRITICAL</span></div>
+          <div class="task-row"><span class="task-id">2D</span><span class="task-content">Fix RAG — prompt injection defense, <code>top_k</code> cap at 20, proper error handling</span><span class="task-tag tag-critical">CRITICAL</span></div>
+          <div class="task-row"><span class="task-id">2E</span><span class="task-content">Source citations + RAG response contract &mdash; rich source objects with filename, snippet, relevance score; document response schema for Team 3 frontend</span></div>
+        </div>
+      </div>
+
+      <!-- Team 3 -->
+      <div class="phase-block" id="p1t3">
+        <div class="phase-block-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h4 style="color:var(--purple-500);">Team 3 — Frontend, UI &amp; Deployment</h4>
+          <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        </div>
+        <div class="phase-block-body">
+          <div class="task-row"><span class="task-id">3A</span><span class="task-content">Fix <code>Chat.jsx</code> — reversed messages, undefined sources, no auto-scroll, empty input guard</span><span class="task-tag tag-critical">CRITICAL</span></div>
+          <div class="task-row"><span class="task-id">3B</span><span class="task-content">Fix <code>History.jsx</code> + <code>Upload.jsx</code> + <code>App.jsx</code> — pagination, dates, search, refresh, error clearing</span><span class="task-tag tag-critical">CRITICAL</span></div>
+          <div class="task-row"><span class="task-id">3C</span><span class="task-content">Fix <code>api.js</code> — remove hardcoded key, response status checks, fix question&rarr;message key</span><span class="task-tag tag-critical">CRITICAL</span></div>
+          <div class="task-row"><span class="task-id">3D</span><span class="task-content">React Router + auth pages — <code>Login.jsx</code>, <code>Register.jsx</code>, <code>ProtectedRoute</code>, route structure</span></div>
+          <div class="task-row"><span class="task-id">3E</span><span class="task-content">Error boundaries + loading states — reusable error boundary, loading skeletons, toast notification system</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="plan-section" id="plan-phase2">
+      <h2 class="plan-section-title">Phase 2 — Advanced Features (1:30 PM – 4:00 PM)</h2>
+
+      <!-- Team 1 -->
+      <div class="phase-block collapsed" id="p2t1">
+        <div class="phase-block-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h4 style="color:var(--blue-600);">Team 1 — Auth, Database &amp; Backend Core</h4>
+          <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        </div>
+        <div class="phase-block-body">
+          <div class="task-row"><span class="task-id">1A</span><span class="task-content">Chat history page — display past conversations, search, delete</span></div>
+          <div class="task-row"><span class="task-id">1B</span><span class="task-content">Settings + profile page — user preferences, API key management</span></div>
+          <div class="task-row"><span class="task-id">1C</span><span class="task-content">LLM configuration UI — model selection, temperature, max tokens</span></div>
+          <div class="task-row"><span class="task-id">1D</span><span class="task-content">Logout flow — token invalidation, session cleanup, redirect</span></div>
+          <div class="task-row"><span class="task-id">1E</span><span class="task-content">CORS hardening + rate limiting — restrict origins, throttle API calls</span><span class="task-tag tag-critical">CRITICAL</span></div>
+        </div>
+      </div>
+
+      <!-- Team 2 -->
+      <div class="phase-block collapsed" id="p2t2">
+        <div class="phase-block-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h4 style="color:var(--green-500);">Team 2 — RAG, Data Pipeline &amp; AI</h4>
+          <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        </div>
+        <div class="phase-block-body">
+          <div class="task-row"><span class="task-id">2A</span><span class="task-content">Source citations — rich objects with filename, snippet, relevance score</span></div>
+          <div class="task-row"><span class="task-id">2B</span><span class="task-content">Retrieval quality — keyword re-ranking after similarity search</span></div>
+          <div class="task-row"><span class="task-id">2C</span><span class="task-content">Multi-format ingestion — PDF, markdown heading splits, code chunking</span></div>
+          <div class="task-row"><span class="task-id">2D</span><span class="task-content">LLM abstraction layer — <code>ClaudeProvider</code>, <code>OpenAIProvider</code> stub, factory pattern</span></div>
+          <div class="task-row"><span class="task-id">2E</span><span class="task-content">Vector DB maintenance — cleanup orphans, stats endpoint, health monitoring</span></div>
+        </div>
+      </div>
+
+      <!-- Team 3 -->
+      <div class="phase-block collapsed" id="p2t3">
+        <div class="phase-block-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <h4 style="color:var(--purple-500);">Team 3 — Frontend, UI &amp; Deployment</h4>
+          <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        </div>
+        <div class="phase-block-body">
+          <div class="task-row"><span class="task-id">3A</span><span class="task-content">Docs portal page — public landing matching demo mockup</span></div>
+          <div class="task-row"><span class="task-id">3B</span><span class="task-content">AI Chat page — Perplexity-style with sources, citations, follow-ups</span></div>
+          <div class="task-row"><span class="task-id">3C</span><span class="task-content">Admin data ingestion panel &mdash; drag &amp; drop upload, document table, ChromaDB stats, delete with confirmation</span></div>
+          <div class="task-row"><span class="task-id">3D</span><span class="task-content">Chat history UI + Settings page + responsive design</span></div>
+          <div class="task-row"><span class="task-id">3E</span><span class="task-content">Dark mode + theme system — CSS custom properties, theme toggle, localStorage persistence, ThemeProvider</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Merge Order -->
+    <div class="plan-section" id="plan-merge">
+      <h2 class="plan-section-title">Merge Order</h2>
+      <ol class="merge-list" style="list-style:none;">
+        <li>Team 1 — Auth backend (<code>database.py</code>, <code>auth.py</code>, <code>main.py</code> routes)</li>
+        <li>Team 2 — RAG engine (<code>rag.py</code>, <code>documents.py</code>, chunking fixes)</li>
+        <li>Team 3 — Infrastructure (Docker, CI/CD, vector DB maintenance)</li>
+        <li>Team 1 — Frontend auth (Login, Register, protected routes)</li>
+        <li>Team 3 — Frontend bug fixes (Chat, History, Upload, api.js)</li>
+        <li>Team 2 — Source citations + Perplexity UI</li>
+        <li>Team 1 + 3 — Settings, responsive design, error handling</li>
+        <li>All teams — Final integration testing and demo prep</li>
+      </ol>
+    </div>
+
+    <!-- Smoke Test Checklist -->
+    <div class="plan-section" id="plan-checklist">
+      <h2 class="plan-section-title">Smoke Test Checklist</h2>
+      <div class="checklist-grid">
+        <div class="check-item"><span class="check-box"></span> User registration works</div>
+        <div class="check-item"><span class="check-box"></span> Login returns valid JWT</div>
+        <div class="check-item"><span class="check-box"></span> Protected routes reject no-auth</div>
+        <div class="check-item"><span class="check-box"></span> Document upload processes</div>
+        <div class="check-item"><span class="check-box"></span> Chunking creates correct vectors</div>
+        <div class="check-item"><span class="check-box"></span> RAG query returns sources</div>
+        <div class="check-item"><span class="check-box"></span> Chat history persists</div>
+        <div class="check-item"><span class="check-box"></span> Search returns results</div>
+        <div class="check-item"><span class="check-box"></span> File size validation works</div>
+        <div class="check-item"><span class="check-box"></span> Prompt injection blocked</div>
+        <div class="check-item"><span class="check-box"></span> Docker compose starts clean</div>
+        <div class="check-item"><span class="check-box"></span> CI pipeline passes</div>
+        <div class="check-item"><span class="check-box"></span> Mobile layout responsive</div>
+        <div class="check-item"><span class="check-box"></span> Error toasts display</div>
+        <div class="check-item"><span class="check-box"></span> Logout clears session</div>
+      </div>
+    </div>
+
+    <!-- Risks -->
+    <div class="plan-section" id="plan-risks">
+      <h2 class="plan-section-title">Risk Mitigations</h2>
+      <div class="risk-cards">
+        <div class="risk-card">
+          <h4>Merge Conflicts in main.py</h4>
+          <p>All 3 teams touch main.py. Mitigate by defining clear route ownership and merging in strict order.</p>
+        </div>
+        <div class="risk-card">
+          <h4>ChromaDB Schema Changes</h4>
+          <p>Team 2 changes may break Team 3's cleanup scripts. Sync on collection schema before Phase 2.</p>
+        </div>
+        <div class="risk-card">
+          <h4>Frontend State Management</h4>
+          <p>Auth state affects all components. Team 1 delivers auth context first, others consume it.</p>
+        </div>
+        <div class="risk-card">
+          <h4>API Contract Changes</h4>
+          <p>Backend route changes break frontend. Lock API contracts at kickoff, version breaking changes.</p>
+        </div>
+      </div>
+
+      <h3 style="font-size:16px; font-weight:600; margin-bottom:12px; margin-top:24px;">Conflict Ownership</h3>
+      <table class="conflict-table">
+        <thead>
+          <tr><th>File</th><th>Primary Owner</th><th>Secondary</th><th>Resolution</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>main.py</code></td><td>Team 1</td><td>Team 2, 3</td><td>Merge in order: auth routes, RAG routes, infra routes</td></tr>
+          <tr><td><code>database.py</code></td><td>Team 1</td><td>Team 2</td><td>Team 1 adds tables first, Team 2 adds queries after</td></tr>
+          <tr><td><code>api.js</code></td><td>Team 1</td><td>Team 3</td><td>Team 1 adds auth headers, Team 3 fixes existing calls</td></tr>
+          <tr><td><code>App.jsx</code></td><td>Team 1</td><td>Team 3</td><td>Team 1 adds router, Team 3 fixes component bugs</td></tr>
+          <tr><td><code>llm.py</code></td><td>Team 2</td><td>Team 1</td><td>Team 2 owns LLM abstraction layer, Team 1 consumes providers</td></tr>
+          <tr><td><code>Login.jsx</code> / <code>Register.jsx</code></td><td>Team 3</td><td>Team 1</td><td>Team 3 builds auth pages, Team 1 provides backend endpoints</td></tr>
+          <tr><td><code>requirements.txt</code></td><td>Team 3</td><td>All</td><td>Each team adds deps to separate lines, Team 3 dedupes</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="plan-footer">BotAssist Sprint Plan &middot; Generated for April 8, 2026 &middot; 3 Teams &times; 5 Members</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FLOATING CHATBOT WIDGET (docs tab only)
+     ═══════════════════════════════════════════════════════ -->
+<button class="chatbot-fab" id="chatbotFab" onclick="toggleChatbot()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+</button>
+
+<div class="chatbot-panel" id="chatbotPanel">
+  <div class="chatbot-header">
+    <div class="chatbot-header-left">
+      <span class="status"></span>
+      <span>Botree AI Assistant</span>
+    </div>
+    <button class="chatbot-close" onclick="toggleChatbot()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l10 10M14 4L4 14"/></svg>
+    </button>
+  </div>
+  <div class="chatbot-messages" id="chatbotMessages">
+    <div class="chatbot-msg bot">
+      <strong>Hi! I'm the Botree AI Assistant.</strong> I can help you with questions about DMS, SFA, FlexiDMS, and more. What would you like to know?
+      <div class="chatbot-chips">
+        <button class="chatbot-chip" onclick="sendChatbotMessage('What is Botree DMS?')">What is Botree DMS?</button>
+        <button class="chatbot-chip" onclick="sendChatbotMessage('How does SFA route planning work?')">SFA route planning</button>
+        <button class="chatbot-chip" onclick="sendChatbotMessage('Tell me about integrations')">Integrations</button>
+      </div>
+    </div>
+  </div>
+  <div class="chatbot-input-area">
+    <textarea id="chatbotInput" rows="1" placeholder="Ask a question..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatbotMessage();}"></textarea>
+    <button class="chatbot-send" onclick="sendChatbotMessage()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 2L11 13M22 2L15 22 11 13 2 9z"/></svg>
+    </button>
+  </div>
+  <div class="chatbot-footer">Powered by Botree AI</div>
+</div>
+
+<!-- Mobile bottom tabs -->
+<div class="mobile-tabs">
+  <button class="mobile-tab active" onclick="switchTab('docs')">Docs</button>
+  <button class="mobile-tab" onclick="switchTab('ai')">Ask AI</button>
+  <button class="mobile-tab" onclick="switchTab('plan')">Sprint</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════ -->
+<script>
+/* ─── Tab Switching ─── */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.mobile-tab').forEach(function(t) { t.classList.remove('active'); });
+
+  document.getElementById('tab-' + tab).classList.add('active');
+  var tabs = document.querySelectorAll('.nav-tab');
+  var idx = { docs: 0, ai: 1, plan: 2 }[tab];
+  if (tabs[idx]) tabs[idx].classList.add('active');
+  var mtabs = document.querySelectorAll('.mobile-tab');
+  if (mtabs[idx]) mtabs[idx].classList.add('active');
+
+  // Show/hide chatbot FAB only on docs
+  var fab = document.getElementById('chatbotFab');
+  var panel = document.getElementById('chatbotPanel');
+  if (tab === 'docs') {
+    fab.style.display = 'flex';
+  } else {
+    fab.style.display = 'none';
+    panel.classList.remove('open');
+  }
+
+  location.hash = tab;
+}
+
+// Hash navigation
+function initFromHash() {
+  var hash = location.hash.replace('#', '');
+  if (['docs', 'ai', 'plan'].indexOf(hash) !== -1) switchTab(hash);
+}
+window.addEventListener('hashchange', initFromHash);
+window.addEventListener('load', initFromHash);
+
+/* ─── TOC Scroll Tracking ─── */
+function updateToc() {
+  var sections = ['section-products', 'section-dms', 'section-sfa', 'section-integrations', 'section-getstarted'];
+  var links = document.querySelectorAll('.toc-link');
+  var current = sections[0];
+  for (var i = 0; i < sections.length; i++) {
+    var el = document.getElementById(sections[i]);
+    if (el && el.getBoundingClientRect().top <= 120) current = sections[i];
+  }
+  links.forEach(function(l) {
+    l.classList.toggle('active', l.dataset.target === current);
+  });
+}
+window.addEventListener('scroll', updateToc);
+
+/* ─── Chatbot Widget ─── */
+function toggleChatbot() {
+  document.getElementById('chatbotPanel').classList.toggle('open');
+}
+
+var chatbotResponses = {
+  dms: '<strong>Botree DMS</strong> is the core distributor management system powering 95,000+ distributors across India.<span class="chatbot-cite">1</span><ul><li><strong>Order-to-Cash:</strong> Complete cycle from order capture through dispatch, invoicing, and payment reconciliation</li><li><strong>Inventory:</strong> Real-time stock with ARS (Auto-Replenishment Suggestions)</li><li><strong>Schemes:</strong> Design and deploy quantity and value-based trade promotions</li><li><strong>GST:</strong> E-invoicing, GSTR automation, HSN mapping</li></ul><span class="chatbot-cite">2</span> Used by brands like Nestl\u00e9, Dabur, and Cipla.<br><a class="chatbot-source-link" href="#">View DMS Documentation \u2192</a>',
+  sfa: '<strong>Botree SFA</strong> uses AI/ML to optimize field sales operations.<span class="chatbot-cite">1</span><ul><li><strong>Route Optimization:</strong> ML-powered beat planning based on retailer priority and geography</li><li><strong>Digital Orders:</strong> Offline-capable order capture with real-time pricing</li><li><strong>Gamification:</strong> Leaderboards and badges driving sales KPIs</li><li><strong>Recommendations:</strong> AI-driven product suggestions per retailer</li></ul><span class="chatbot-cite">2</span> Deployed across 33,000+ sales reps.<br><a class="chatbot-source-link" href="#">View SFA Documentation \u2192</a>',
+  integration: 'Botree offers multiple <strong>integration options</strong>:<span class="chatbot-cite">1</span><ul><li><strong>REST APIs:</strong> OAuth 2.0 secured endpoints with Swagger docs</li><li><strong>FlexiDMS:</strong> Bi-directional Tally Prime sync<span class="chatbot-cite">2</span></li><li><strong>ERP Connectors:</strong> Pre-built for SAP, Oracle, Dynamics</li><li><strong>Webhooks:</strong> Real-time event notifications</li></ul><a class="chatbot-source-link" href="#">View Integration Guide \u2192</a>'
+};
+
+function sendChatbotMessage(text) {
+  var input = document.getElementById('chatbotInput');
+  var msg = text || input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  var container = document.getElementById('chatbotMessages');
+  container.innerHTML += '<div class="chatbot-msg user">' + escapeHtml(msg) + '</div>';
+
+  // Typing indicator
+  var typingId = 'typing-' + Date.now();
+  container.innerHTML += '<div class="chatbot-msg bot" id="' + typingId + '"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+  container.scrollTop = container.scrollHeight;
+
+  setTimeout(function() {
+    var typingEl = document.getElementById(typingId);
+    var lower = msg.toLowerCase();
+    var response;
+    if (lower.indexOf('dms') !== -1 || lower.indexOf('distribution') !== -1 || lower.indexOf('inventory') !== -1 || lower.indexOf('order') !== -1) {
+      response = chatbotResponses.dms;
+    } else if (lower.indexOf('sfa') !== -1 || lower.indexOf('route') !== -1 || lower.indexOf('sales force') !== -1) {
+      response = chatbotResponses.sfa;
+    } else if (lower.indexOf('integrat') !== -1 || lower.indexOf('tally') !== -1 || lower.indexOf('api') !== -1) {
+      response = chatbotResponses.integration;
+    } else {
+      response = 'Botree Software offers a comprehensive suite of distribution management products:<span class="chatbot-cite">1</span><ul><li><strong>DMS</strong> \u2014 Core distributor management</li><li><strong>SFA</strong> \u2014 AI-powered sales force automation</li><li><strong>FlexiDMS</strong> \u2014 Tally-integrated lightweight DMS</li><li><strong>MyDMS</strong> \u2014 Multi-company distributor portal</li><li><strong>Retailer App</strong> \u2014 Self-ordering & loyalty</li><li><strong>Insights</strong> \u2014 AI/ML analytics</li></ul><a class="chatbot-source-link" href="#">Explore all products \u2192</a>';
+    }
+    if (typingEl) {
+      typingEl.innerHTML = response;
+      typingEl.innerHTML += '<div class="chatbot-chips"><button class="chatbot-chip" onclick="sendChatbotMessage(\'Tell me about DMS features\')">DMS features</button><button class="chatbot-chip" onclick="sendChatbotMessage(\'How does SFA work?\')">SFA details</button></div>';
+    }
+    container.scrollTop = container.scrollHeight;
+  }, 1200);
+}
+
+/* ─── Ask AI (Perplexity-style) ─── */
+var aiResponses = {
+  dms: {
+    question: 'How does the DMS order-to-cash cycle work?',
+    sources: [
+      { num: 1, label: 'DMS Overview' },
+      { num: 2, label: 'Inventory & ARS' },
+      { num: 3, label: 'Order-to-Cash' },
+      { num: 4, label: 'GST Compliance' }
+    ],
+    answer: '<p>The <strong>Botree DMS order-to-cash (O2C) cycle</strong> is a comprehensive workflow that manages the entire lifecycle from order placement to payment collection.<span class="ai-cite" onclick="highlightSource(1)">1</span></p><p><strong>Order Capture &amp; Processing:</strong> Orders flow in through multiple channels \u2014 SFA app, retailer self-ordering, or manual entry at the distributor. Each order is validated against real-time stock availability and applicable trade schemes before confirmation.<span class="ai-cite" onclick="highlightSource(3)">3</span></p><ul><li><strong>Dispatch &amp; Invoicing:</strong> Once confirmed, the system generates pick lists, manages dispatch sequencing, and creates GST-compliant invoices with automatic HSN code mapping and tax computation<span class="ai-cite" onclick="highlightSource(4)">4</span></li><li><strong>Inventory Updates:</strong> Stock levels are adjusted in real-time upon dispatch. The ARS (Auto-Replenishment Suggestion) engine monitors consumption patterns and safety stock levels to recommend reorders<span class="ai-cite" onclick="highlightSource(2)">2</span></li><li><strong>Outstanding &amp; Collections:</strong> The system tracks outstanding amounts per retailer, manages credit limits, and supports multiple payment modes including cash, cheque, NEFT, and UPI</li><li><strong>Reconciliation:</strong> Payment entries are matched against invoices with automatic credit note generation for returns and scheme settlements</li></ul><p>The entire cycle integrates with <strong>trade scheme processing</strong> \u2014 quantity-based and value-based promotions are applied at the point of invoicing, and resulting claims are tracked through a multi-level approval workflow.<span class="ai-cite" onclick="highlightSource(1)">1</span></p>',
+    followups: [
+      'How does the ARS auto-replenishment engine work?',
+      'What trade scheme types does DMS support?',
+      'How are GST returns filed from DMS?'
+    ]
+  },
+  sfa: {
+    question: 'How does SFA route optimization work?',
+    sources: [
+      { num: 1, label: 'SFA Overview' },
+      { num: 2, label: 'Route Planning' },
+      { num: 3, label: 'Gamification' },
+      { num: 4, label: 'Product Recommender' }
+    ],
+    answer: '<p><strong>Botree SFA route optimization</strong> uses machine learning to create optimal beat plans for sales representatives, maximizing coverage and productivity.<span class="ai-cite" onclick="highlightSource(2)">2</span></p><p><strong>How the ML Model Works:</strong></p><ul><li><strong>Input Factors:</strong> The algorithm considers retailer priority (platinum/gold/silver), geographic proximity, historical order patterns, time-of-day preferences, and live traffic data<span class="ai-cite" onclick="highlightSource(2)">2</span></li><li><strong>Constraint Optimization:</strong> Routes respect working hours, mandatory visit frequency per retailer tier, and vehicle capacity for van sales mode</li><li><strong>Dynamic Re-routing:</strong> When a retailer is unavailable or a high-priority order comes in, the system re-optimizes the remaining route in real-time<span class="ai-cite" onclick="highlightSource(1)">1</span></li></ul><p><strong>Gamification Layer:</strong> Route adherence is tracked as a KPI. Sales reps earn points and badges for completing routes on schedule, and leaderboards drive healthy competition across territories.<span class="ai-cite" onclick="highlightSource(3)">3</span></p><p><strong>Product Recommendations:</strong> At each stop, the SFA app displays AI-driven product suggestions based on the retailer\'s purchase history, category trends, and seasonal patterns. This has shown a <strong>15-20% increase</strong> in average order value across deployments.<span class="ai-cite" onclick="highlightSource(4)">4</span></p>',
+    followups: [
+      'How does gamification impact sales performance?',
+      'Can SFA work offline in areas without connectivity?',
+      'How are retailer tiers determined?'
+    ]
+  },
+  integration: {
+    question: 'How do I integrate with Tally?',
+    sources: [
+      { num: 1, label: 'FlexiDMS Overview' },
+      { num: 2, label: 'Tally Integration' },
+      { num: 3, label: 'REST APIs' },
+      { num: 4, label: 'Data Mapping' },
+      { num: 5, label: 'ERP Connectors' }
+    ],
+    answer: '<p>Botree offers <strong>Tally integration</strong> primarily through <strong>FlexiDMS</strong>, designed specifically for distributors who use Tally Prime or Tally ERP 9 as their primary accounting software.<span class="ai-cite" onclick="highlightSource(1)">1</span></p><p><strong>Integration Architecture:</strong></p><ul><li><strong>Bi-directional Sync:</strong> FlexiDMS maintains a live connection with Tally, syncing masters (products, parties, ledgers) and transactions (invoices, receipts, credit notes) in both directions<span class="ai-cite" onclick="highlightSource(2)">2</span></li><li><strong>Data Mapping:</strong> A configurable mapping layer translates between Botree\'s product/party schema and Tally\'s ledger structure. Custom fields and groups are fully supported<span class="ai-cite" onclick="highlightSource(4)">4</span></li><li><strong>Conflict Resolution:</strong> When the same record is modified in both systems, FlexiDMS uses timestamp-based resolution with a manual review queue for ambiguous cases</li></ul><p><strong>REST API Alternative:</strong> For custom integrations beyond Tally, Botree exposes RESTful APIs with OAuth 2.0 authentication, rate limiting (1000 req/min), and comprehensive Swagger documentation.<span class="ai-cite" onclick="highlightSource(3)">3</span></p><p><strong>Enterprise ERP:</strong> Pre-built connectors are available for SAP, Oracle, and Microsoft Dynamics with configurable field mapping and scheduling.<span class="ai-cite" onclick="highlightSource(5)">5</span></p>',
+    followups: [
+      'What is the setup process for FlexiDMS?',
+      'How do webhooks work for real-time events?',
+      'Can I use the API to build custom dashboards?'
+    ]
+  },
+  schemes: {
+    question: 'How do trade schemes and claims work?',
+    sources: [
+      { num: 1, label: 'Trade Schemes' },
+      { num: 2, label: 'Claims Processing' },
+      { num: 3, label: 'DMS Overview' },
+      { num: 4, label: 'Order-to-Cash' }
+    ],
+    answer: '<p><strong>Trade schemes</strong> in Botree DMS allow brands to design, deploy, and track promotional programs across their distributor network.<span class="ai-cite" onclick="highlightSource(1)">1</span></p><p><strong>Scheme Types:</strong></p><ul><li><strong>Quantity-based:</strong> Buy X get Y free, tiered slab offers (e.g., buy 10 cases get 1 free, buy 20 get 3 free)</li><li><strong>Value-based:</strong> Percentage discounts, flat amount off, cash-back schemes</li><li><strong>Combo schemes:</strong> Buy product A + product B, get discount on product C<span class="ai-cite" onclick="highlightSource(1)">1</span></li><li><strong>Target-linked:</strong> Achievement-based incentives tied to monthly/quarterly volume targets</li></ul><p><strong>Deployment:</strong> Schemes are configured at the head office with region/channel/retailer-tier targeting. They flow automatically to distributors and are applied at the point of invoicing in real-time.<span class="ai-cite" onclick="highlightSource(4)">4</span></p><p><strong>Claims Lifecycle:</strong></p><ul><li><strong>Auto-computation:</strong> DMS calculates scheme benefits at invoicing and accumulates claims</li><li><strong>Submission:</strong> Distributors submit accumulated claims with supporting invoice data<span class="ai-cite" onclick="highlightSource(2)">2</span></li><li><strong>Approval:</strong> Multi-level approval workflow (ASM \u2192 RSM \u2192 HO) with configurable thresholds</li><li><strong>Settlement:</strong> Approved claims generate credit notes or direct payment instructions<span class="ai-cite" onclick="highlightSource(3)">3</span></li></ul>',
+    followups: [
+      'How do I set up a quantity-based slab scheme?',
+      'What reports are available for scheme ROI?',
+      'How does claim approval routing work?'
+    ]
+  },
+  default: {
+    question: '',
+    sources: [
+      { num: 1, label: 'Product Overview' },
+      { num: 2, label: 'Getting Started' },
+      { num: 3, label: 'Architecture' }
+    ],
+    answer: '<p>Botree Software provides a <strong>comprehensive distribution management platform</strong> trusted by 100+ FMCG brands across India.<span class="ai-cite" onclick="highlightSource(1)">1</span></p><p><strong>Product Suite:</strong></p><ul><li><strong>Botree DMS</strong> \u2014 End-to-end distributor management: order-to-cash, inventory, schemes, claims, and GST compliance<span class="ai-cite" onclick="highlightSource(1)">1</span></li><li><strong>Botree SFA</strong> \u2014 AI-powered sales force automation with route optimization, digital order taking, and gamified KPIs</li><li><strong>Botree FlexiDMS</strong> \u2014 Lightweight DMS with seamless Tally Prime integration for accounting-first distributors</li><li><strong>Botree MyDMS</strong> \u2014 Multi-company, multi-brand portal with single-bill convenience</li><li><strong>Retailer App</strong> \u2014 Self-ordering platform with scheme visibility and loyalty programs</li><li><strong>Botree Insights</strong> \u2014 AI/ML analytics with real-time dashboards and anomaly detection<span class="ai-cite" onclick="highlightSource(2)">2</span></li></ul><p>The platform serves <strong>95,000+ distributors</strong>, <strong>33,000+ sales reps</strong>, and <strong>5M+ retail stores</strong>, with clients including Nestl\u00e9, Dabur, Cipla, and Amul.<span class="ai-cite" onclick="highlightSource(3)">3</span></p>',
+    followups: [
+      'Tell me more about DMS features',
+      'How does the SFA AI work?',
+      'What integration options are available?'
+    ]
+  }
+};
+
+function detectTopic(text) {
+  var lower = text.toLowerCase();
+  if (lower.indexOf('dms') !== -1 || lower.indexOf('distribution') !== -1 || lower.indexOf('inventory') !== -1 || lower.indexOf('order-to-cash') !== -1 || lower.indexOf('o2c') !== -1) return 'dms';
+  if (lower.indexOf('sfa') !== -1 || lower.indexOf('route') !== -1 || lower.indexOf('sales force') !== -1 || lower.indexOf('field sales') !== -1) return 'sfa';
+  if (lower.indexOf('integrat') !== -1 || lower.indexOf('tally') !== -1 || lower.indexOf('api') !== -1 || lower.indexOf('webhook') !== -1 || lower.indexOf('erp') !== -1) return 'integration';
+  if (lower.indexOf('scheme') !== -1 || lower.indexOf('promotion') !== -1 || lower.indexOf('claim') !== -1 || lower.indexOf('trade') !== -1) return 'schemes';
+  return 'default';
+}
+
+var aiHasConversation = false;
+
+function askAI(text) {
+  var input = document.getElementById('aiInput');
+  input.value = text;
+  sendAIMessage();
+}
+
+function sendAIMessage() {
+  var input = document.getElementById('aiInput');
+  var msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Hide welcome
+  var welcome = document.getElementById('aiWelcome');
+  if (welcome) welcome.style.display = 'none';
+  aiHasConversation = true;
+
+  var container = document.getElementById('aiMessagesInner');
+  var topic = detectTopic(msg);
+  var data = aiResponses[topic];
+
+  // Build answer block
+  var block = document.createElement('div');
+  block.className = 'ai-answer-block';
+
+  var sourcesHtml = data.sources.map(function(s) {
+    return '<div class="ai-source-card" data-num="' + s.num + '"><span class="ai-source-num">' + s.num + '</span><span class="label">' + s.label + '</span></div>';
+  }).join('');
+
+  block.innerHTML =
+    '<div class="ai-question">' + escapeHtml(msg) + '</div>' +
+    '<div class="ai-sources-row">' + sourcesHtml + '</div>' +
+    '<div class="ai-answer-text"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+
+  container.appendChild(block);
+
+  var messagesEl = document.getElementById('aiMessages');
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  // Simulate typing delay
+  setTimeout(function() {
+    var answerText = block.querySelector('.ai-answer-text');
+    answerText.innerHTML = data.answer;
+
+    // Add related section
+    var followupsHtml = data.followups.map(function(f) {
+      return '<div class="ai-related-item" onclick="askAI(\'' + f.replace(/'/g, "\\'") + '\')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l7 7-7 7"/></svg>' + f + '</div>';
+    }).join('');
+
+    var related = document.createElement('div');
+    related.className = 'ai-related';
+    related.innerHTML = '<div class="ai-related-title">Related</div>' + followupsHtml;
+    block.appendChild(related);
+
+    // Add action buttons
+    var actions = document.createElement('div');
+    actions.className = 'ai-answer-actions';
+    actions.innerHTML =
+      '<button class="ai-action-btn" onclick="copyAnswer(this)"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><path d="M7 3V1h8v8h-2"/></svg> Copy</button>' +
+      '<button class="ai-action-btn"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="6"/><path d="M7 4v6M4 7h6"/></svg> Share</button>' +
+      '<button class="ai-action-btn" onclick="this.style.color=\'var(--green-500)\'">&#128077;</button>' +
+      '<button class="ai-action-btn" onclick="this.style.color=\'var(--red-500)\'">&#128078;</button>' +
+      '<span class="ai-sources-count">&middot; ' + data.sources.length + ' sources</span>';
+    block.appendChild(actions);
+
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }, 1500);
+}
+
+function highlightSource(num) {
+  var cards = document.querySelectorAll('.ai-source-card');
+  cards.forEach(function(c) { c.classList.remove('highlight'); });
+  cards.forEach(function(c) {
+    if (parseInt(c.dataset.num) === num) {
+      c.classList.add('highlight');
+      setTimeout(function() { c.classList.remove('highlight'); }, 2000);
+    }
+  });
+}
+
+function copyAnswer(btn) {
+  var block = btn.closest('.ai-answer-block');
+  var text = block.querySelector('.ai-answer-text').innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    var original = btn.innerHTML;
+    btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="var(--green-500)" stroke-width="2"><path d="M3 7l3 3 7-7"/></svg> Copied!';
+    setTimeout(function() { btn.innerHTML = original; }, 2000);
+  });
+}
+
+function resetAI() {
+  var container = document.getElementById('aiMessagesInner');
+  container.innerHTML =
+    '<div class="ai-welcome" id="aiWelcome">' +
+      '<div class="ai-welcome-icon">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L9 9l-7 1 5 5-1.5 7L12 18l6.5 4L17 15l5-5-7-1z"/></svg>' +
+      '</div>' +
+      '<h2>Ask anything about Botree</h2>' +
+      '<p>Trained on the complete Botree product documentation \u2014 DMS, SFA, FlexiDMS, MyDMS, Retailer App, and Insights. Ask about features, integrations, configuration, or best practices.</p>' +
+      '<div class="ai-suggestions">' +
+        '<button class="ai-suggestion" onclick="askAI(\'How does the DMS order-to-cash cycle work?\')"><h4>DMS Order-to-Cash</h4><p>Complete flow from order capture to payment reconciliation</p></button>' +
+        '<button class="ai-suggestion" onclick="askAI(\'How does SFA route optimization work?\')"><h4>SFA Route Optimization</h4><p>ML-powered route planning and beat management</p></button>' +
+        '<button class="ai-suggestion" onclick="askAI(\'How do I integrate with Tally?\')"><h4>Tally Integration</h4><p>FlexiDMS setup for Tally Prime sync</p></button>' +
+        '<button class="ai-suggestion" onclick="askAI(\'How do trade schemes and claims work?\')"><h4>Trade Schemes &amp; Claims</h4><p>Scheme design, deployment, and claims processing</p></button>' +
+      '</div>' +
+    '</div>';
+  aiHasConversation = false;
+
+  // Reset thread highlights
+  document.querySelectorAll('.ai-thread-item').forEach(function(t) { t.classList.remove('active'); });
+}
+
+function handleThreadClick(el, topic) {
+  document.querySelectorAll('.ai-thread-item').forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+
+  var data = aiResponses[topic];
+  var q = data.question || el.querySelector('.title').textContent;
+  resetAI();
+
+  setTimeout(function() { askAI(q); }, 100);
+}
+
+function handleAIKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendAIMessage();
+  }
+}
+
+function autoResize(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+}
+
+/* ─── Sprint Plan subnav ─── */
+function updatePlanSubnav() {
+  var sections = ['plan-teams', 'plan-schedule', 'plan-phase1', 'plan-phase2', 'plan-merge', 'plan-checklist', 'plan-risks'];
+  var links = document.querySelectorAll('.plan-subnav a');
+  var current = sections[0];
+  for (var i = 0; i < sections.length; i++) {
+    var el = document.getElementById(sections[i]);
+    if (el && el.getBoundingClientRect().top <= 140) current = sections[i];
+  }
+  links.forEach(function(l) {
+    l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+  });
+}
+window.addEventListener('scroll', updatePlanSubnav);
+
+/* ─── Utilities ─── */
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>

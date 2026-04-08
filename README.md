@@ -1,3 +1,14 @@
+Terminal 1 — Backend
+  cd /Users/girishdhommaraju.s/Desktop/demo_sta/my_git/botassist_team1/backend    
+  source .venv/bin/activate
+  makedev                                                                                                                                        
+   
+  # Terminal 2 — Frontend                                                                                                                         
+  cd /Users/girishdhommaraju.s/Desktop/demo_sta/my_git/botassist_team1/frontend                                                                 
+  npm run dev
+
+  lsof -ti:8000
+  kill -9 64198
 # BotAssist — AI Document Chat
 
 An AI-powered RAG (Retrieval-Augmented Generation) chat application for querying uploaded documents. Built with FastAPI, ChromaDB, Claude API, and React.

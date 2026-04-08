@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # BotAssist — AI Document Chat
 
 An AI-powered RAG chat application. Upload documents, ask questions, get AI answers with source citations.
@@ -21,8 +25,10 @@ An AI-powered RAG chat application. Upload documents, ask questions, get AI answ
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env        # then edit with your ANTHROPIC_API_KEY
 mkdir -p uploads chroma_data
 make dev                    # starts on http://localhost:8000
+                            # API docs: http://localhost:8000/docs
 
 # Frontend (separate terminal)
 cd frontend
@@ -30,7 +36,13 @@ npm install
 npm run dev                 # starts on http://localhost:5173
 
 # Tests
-cd backend && make test
+cd backend && make test               # run all tests
+cd backend && pytest tests/test_documents.py -v  # run a single test file
+cd backend && pytest tests/ -k "test_name" -v    # run a single test by name
+
+# Lint
+cd backend && make lint               # check only
+cd backend && ruff format app/ tests/ # auto-fix formatting
 ```
 
 ## Database Schema
@@ -62,12 +74,12 @@ All routes are at root level (no `/api/` prefix). Frontend Vite proxy rewrites `
 | Method | Route | Auth | Description |
 |--------|-------|------|-------------|
 | GET | /health | No | Health check |
-| POST | /documents/upload | Yes (X-Admin-Key) | Upload document (multipart) |
+| POST | /documents/upload | **BUG: None** | Upload document (multipart) — auth.py exists but is not wired in |
 | GET | /documents | No | List all documents |
-| DELETE | /documents/{doc_id} | **BUG: No auth** | Delete document |
-| POST | /query | Yes (X-Admin-Key) | RAG query — send question, get AI answer |
+| DELETE | /documents/{doc_id} | **BUG: None** | Delete document |
+| POST | /query | **BUG: None** | RAG query — send question, get AI answer |
 | GET | /chat/{session_id} | No | Get chat history for session |
-| GET | /search?keyword=... | No | Search chat history |
+| GET | /search?keyword=... | No | Search chat history — SQL injection in search_history() |
 
 ### Request/Response Models
 - `QueryRequest`: `{ message: str, session_id: str | None, top_k: int (default 5) }`
